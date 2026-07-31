@@ -190,23 +190,24 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
                 { _, _, name, _, _ in
                     guard let rawName = name?.rawValue as String? else { return }
                     Task { @MainActor in
+                        let controller = YTMController.shared
                         switch rawName {
                         case "com.ymacplayer.togglePlay":
-                            YTMController.shared.togglePlay()
+                            controller.togglePlay()
                         case "com.ymacplayer.nextTrack":
-                            YTMController.shared.nextTrack()
+                            controller.nextTrack()
                         case "com.ymacplayer.previousTrack":
-                            YTMController.shared.previousTrack()
+                            controller.previousTrack()
                         case "com.ymacplayer.toggleShuffle":
-                            YTMController.shared.toggleShuffle()
+                            controller.toggleShuffle()
                         case "com.ymacplayer.toggleRepeat":
-                            YTMController.shared.toggleRepeat()
+                            controller.toggleRepeat()
                         case "com.ymacplayer.selectPlaylist":
-                            if let playlistID = YTMController.shared.sharedDefaults?.string(forKey: "pendingSelectedPlaylistID") {
-                                YTMController.shared.openPlaylistById(playlistID)
+                            if let playlistID = controller.sharedDefaults?.string(forKey: "pendingSelectedPlaylistID") {
+                                controller.openPlaylistById(playlistID)
                             }
                         case "com.ymacplayer.resetPlaylist":
-                            YTMController.shared.resetPlaylistSelection()
+                            controller.resetPlaylistSelection()
                         default:
                             break
                         }
@@ -231,7 +232,7 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
 
     // MARK: - JavaScript Bridge Handler
 
-    @objc nonisolated func userContentController(
+    nonisolated func userContentController(
         _ userContentController: WKUserContentController,
         didReceive message: WKScriptMessage
     ) {
@@ -489,23 +490,25 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
             lastLoadedArtworkUrl = artworkUrl
             MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
 
-            Task {
+            Task { [weak self] in
                 guard
                     let (data, _) = try? await URLSession.shared.data(from: url),
                     let image = NSImage(data: data)
                 else { return }
 
-                guard self.artworkUrl == targetUrlString else { return }
+                await MainActor.run { [weak self] in
+                    guard let self = self, self.artworkUrl == targetUrlString else { return }
 
-                self.cachedArtworkImage = image
-                self.saveArtworkToAppGroup(image: image)
+                    self.cachedArtworkImage = image
+                    self.saveArtworkToAppGroup(image: image)
 
-                var updatedInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [String: Any]()
-                let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
-                updatedInfo[MPMediaItemPropertyArtwork] = artwork
+                    var updatedInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [String: Any]()
+                    let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+                    updatedInfo[MPMediaItemPropertyArtwork] = artwork
 
-                MPNowPlayingInfoCenter.default().nowPlayingInfo = updatedInfo
-                self.updateWidgetDataIfNeeded(forceReload: true)
+                    MPNowPlayingInfoCenter.default().nowPlayingInfo = updatedInfo
+                    self.updateWidgetDataIfNeeded(forceReload: true)
+                }
             }
 
         } else {

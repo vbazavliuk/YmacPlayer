@@ -36,5 +36,5 @@
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/your-username/YmacPlayer.git](https://github.com/your-username/YmacPlayer.git)
+git clone [https://github.com/vbazavliuk/YmacPlayer.git](https://github.com/vbazavliuk/YmacPlayer.git)
 cd YmacPlayer

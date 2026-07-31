@@ -16,9 +16,8 @@ struct HiddenWebView: NSViewRepresentable {
     }
 
     /// Re-attaches the webView to the background window when the popover or browser view closes.
+    @MainActor
     static func dismantleNSView(_ nsView: WKWebView, coordinator: ()) {
-        Task { @MainActor in
-            YTMController.shared.attachToBackgroundWindow()
-        }
+        YTMController.shared.attachToBackgroundWindow()
     }
 }

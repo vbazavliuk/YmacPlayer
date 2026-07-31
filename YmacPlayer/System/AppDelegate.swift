@@ -81,7 +81,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 preferredEdge: .minY
             )
 
-            NSApp.activate(ignoringOtherApps: true)
+            NSApp.activate()
         }
     }
 
@@ -288,32 +288,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func showAboutWindow() {
-            let alert = NSAlert()
+        let alert = NSAlert()
 
-            alert.messageText = "Ymac Player"
-            alert.informativeText = """
-            Version 1.0.0
+        alert.messageText = "Ymac Player"
+        alert.informativeText = """
+        Version 1.0.0
 
-            A lightweight, background-native macOS status bar player and desktop widget for YouTube Music.
+        A lightweight, background-native macOS status bar player and desktop widget for YouTube Music.
 
-            Key Features:
-            • Menu Bar Popover: Full player controls, track seeker, and queue viewer.
-            • Interactive Desktop Widgets: Control playback and switch playlists directly from macOS Widgets via AppIntents.
-            • System Media Integration: Full support for Control Center, Now Playing metadata, and media keys.
-            • Multi-Language Support: Available in 10 languages with real-time UI language switching.
-            • Background Web Engine: Runs in a dedicated background container to ensure uninterrupted audio playback.
+        Key Features:
+        • Menu Bar Popover: Full player controls, track seeker, and queue viewer.
+        • Interactive Desktop Widgets: Control playback and switch playlists directly from macOS Widgets via AppIntents.
+        • System Media Integration: Full support for Control Center, Now Playing metadata, and media keys.
+        • Multi-Language Support: Available in 10 languages with real-time UI language switching.
+        • Background Web Engine: Runs in a dedicated background container to ensure uninterrupted audio playback.
 
-            Built with SwiftUI, WebKit, WidgetKit, and AppIntents.
-            """
-            alert.alertStyle = .informational
-            alert.icon = NSImage(
-                systemSymbolName: "music.note.house.fill",
-                accessibilityDescription: "Ymac Player"
-            )
+        Built with SwiftUI, WebKit, WidgetKit, and AppIntents.
+        """
+        alert.alertStyle = .informational
+        alert.icon = NSImage(
+            systemSymbolName: "music.note.house.fill",
+            accessibilityDescription: "Ymac Player"
+        )
 
-            alert.addButton(withTitle: "OK")
-            alert.runModal()
-        }
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
 
     @objc private func quitApp() {
         NSApplication.shared.terminate(nil)

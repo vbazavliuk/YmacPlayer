@@ -185,7 +185,7 @@ struct LocalizedStrings {
         case .portuguese: return "Playlists"
         case .italian: return "Playlist"
         case .french: return "Playlists"
-        case .romanian: return "Listefixate"
+        case .romanian: return "Liste fixate"
         case .polish: return "Playlisty"
         }
     }
@@ -225,7 +225,7 @@ struct LocalizedStrings {
         case .english: return "Quit App"
         case .german: return "App beenden"
         case .russian: return "Завершить программу"
-        case .ukrainian: return "Завершити програму"
+        case .ukrainian: return "Завершити программу"
         case .spanish: return "Salir de la aplicación"
         case .portuguese: return "Sair do aplicativo"
         case .italian: return "Esci dall'applicazione"

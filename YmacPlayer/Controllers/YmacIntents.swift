@@ -5,11 +5,12 @@ import CoreFoundation
 // MARK: - Helper Functions
 
 /// Checks if the app is in a valid state to execute playback commands from widget intents.
-/// Marked as `nonisolated` to allow synchronous invocation from non-isolated AppIntent execution contexts in Swift 6.
+/// Marked `nonisolated` to opt out of the project's default main-actor isolation, since
+/// `AppIntent.perform()` is not guaranteed to run on the main actor.
 nonisolated private func canExecuteCommand() -> Bool {
-    let defaults = UserDefaults(suiteName: "group.com.ymacplayer")
-    let isLoggedIn = defaults?.object(forKey: "widgetIsLoggedIn") != nil ? defaults!.bool(forKey: "widgetIsLoggedIn") : true
-    let hasSelectedPlaylist = defaults?.bool(forKey: "widgetHasSelectedPlaylist") ?? false
+    guard let defaults = UserDefaults(suiteName: "group.com.ymacplayer") else { return true }
+    let isLoggedIn = defaults.object(forKey: "widgetIsLoggedIn") != nil ? defaults.bool(forKey: "widgetIsLoggedIn") : true
+    let hasSelectedPlaylist = defaults.bool(forKey: "widgetHasSelectedPlaylist")
     return isLoggedIn && hasSelectedPlaylist
 }
 
@@ -18,7 +19,7 @@ nonisolated private func canExecuteCommand() -> Bool {
 /// App Intent for toggling playback (Play / Pause).
 struct TogglePlayIntent: AppIntent {
     static var title: LocalizedStringResource = "Play / Pause"
-    
+
     func perform() async throws -> some IntentResult {
         if canExecuteCommand() {
             postDarwinNotification("com.ymacplayer.togglePlay")
@@ -30,7 +31,7 @@ struct TogglePlayIntent: AppIntent {
 /// App Intent for skipping to the next track.
 struct NextTrackIntent: AppIntent {
     static var title: LocalizedStringResource = "Next Track"
-    
+
     func perform() async throws -> some IntentResult {
         if canExecuteCommand() {
             postDarwinNotification("com.ymacplayer.nextTrack")
@@ -42,7 +43,7 @@ struct NextTrackIntent: AppIntent {
 /// App Intent for returning to the previous track.
 struct PreviousTrackIntent: AppIntent {
     static var title: LocalizedStringResource = "Previous Track"
-    
+
     func perform() async throws -> some IntentResult {
         if canExecuteCommand() {
             postDarwinNotification("com.ymacplayer.previousTrack")
@@ -54,7 +55,7 @@ struct PreviousTrackIntent: AppIntent {
 /// App Intent for toggling shuffle mode.
 struct ToggleShuffleIntent: AppIntent {
     static var title: LocalizedStringResource = "Shuffle"
-    
+
     func perform() async throws -> some IntentResult {
         if canExecuteCommand() {
             postDarwinNotification("com.ymacplayer.toggleShuffle")
@@ -66,7 +67,7 @@ struct ToggleShuffleIntent: AppIntent {
 /// App Intent for toggling repeat mode.
 struct ToggleRepeatIntent: AppIntent {
     static var title: LocalizedStringResource = "Repeat"
-    
+
     func perform() async throws -> some IntentResult {
         if canExecuteCommand() {
             postDarwinNotification("com.ymacplayer.toggleRepeat")
@@ -111,6 +112,7 @@ struct ResetPlaylistIntent: AppIntent {
 // MARK: - Inter-Process Communication
 
 /// Posts a Darwin system notification to trigger player actions across app targets.
+/// Marked `nonisolated` for the same reason as `canExecuteCommand()` above.
 nonisolated private func postDarwinNotification(_ name: String) {
     let notificationName = name as CFString
     CFNotificationCenterPostNotification(

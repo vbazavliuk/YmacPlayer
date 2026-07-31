@@ -245,7 +245,7 @@ enum YTMJavaScript {
                     label.includes('одну')
                 ) {
                     repeatMode = 2;
-                } else if (isPressed || label.includes('all') || label.includes('все') || label.includes('всі') || label.includes('alle') || label.includes('tutti') || label.includes('tutti')) {
+                } else if (isPressed || label.includes('all') || label.includes('все') || label.includes('всі') || label.includes('alle') || label.includes('tutti')) {
                     repeatMode = 1;
                 }
             }

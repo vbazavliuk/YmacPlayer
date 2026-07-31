@@ -245,7 +245,7 @@ struct MainWidgetView: View {
         VStack(spacing: 1) {
             Slider(
                 value: Binding(
-                    get: { controller.currentTime },
+                    get: { min(controller.currentTime, max(controller.duration, 1)) },
                     set: { controller.currentTime = $0 }
                 ),
                 in: 0...max(controller.duration, 1),
@@ -389,12 +389,14 @@ struct MainWidgetView: View {
         .disabled(!controller.hasSelectedPlaylist)
         .opacity(controller.hasSelectedPlaylist ? 1.0 : 0.4)
     }
+}
 
-    private func formatTime(_ timeInSeconds: Double) -> String {
-        guard !timeInSeconds.isNaN, !timeInSeconds.isInfinite else { return "0:00" }
-        let totalSeconds = Int(timeInSeconds)
-        let minutes = totalSeconds / 60
-        let seconds = totalSeconds % 60
-        return String(format: "%d:%02d", minutes, seconds)
-    }
+// MARK: - Helpers
+
+func formatTime(_ timeInSeconds: Double) -> String {
+    guard !timeInSeconds.isNaN, !timeInSeconds.isInfinite else { return "0:00" }
+    let totalSeconds = Int(timeInSeconds)
+    let minutes = totalSeconds / 60
+    let seconds = totalSeconds % 60
+    return String(format: "%d:%02d", minutes, seconds)
 }

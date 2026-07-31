@@ -29,6 +29,39 @@ struct SimpleEntry: TimelineEntry {
     let playlists: [WidgetPlaylistItem]
 }
 
+// MARK: - Shared Widget Time Formatting
+
+/// Shared timer/progress helpers used by both the small and medium widget layouts,
+/// avoiding duplicated logic across the two views.
+protocol WidgetTimeFormatting {
+    var entry: SimpleEntry { get }
+}
+
+extension WidgetTimeFormatting {
+    var trackStartDate: Date {
+        Date().addingTimeInterval(-entry.currentTime)
+    }
+
+    /// A valid date range for `ProgressView(timerInterval:)`.
+    /// Returns nil when the range would be invalid (zero/negative duration, or elapsed >= duration).
+    var timerRange: ClosedRange<Date>? {
+        guard entry.duration > 0, entry.currentTime < entry.duration else { return nil }
+        let now = Date()
+        let startDate = now.addingTimeInterval(-entry.currentTime)
+        let endDate = startDate.addingTimeInterval(entry.duration - entry.currentTime)
+        guard endDate > startDate else { return nil }
+        return startDate...endDate
+    }
+
+    func formatTime(_ seconds: Double) -> String {
+        guard !seconds.isNaN, !seconds.isInfinite, seconds > 0 else { return "0:00" }
+        let total = Int(seconds)
+        let mins = total / 60
+        let secs = total % 60
+        return String(format: "%d:%02d", mins, secs)
+    }
+}
+
 // MARK: - Timeline Provider
 
 /// Provides snapshot and timeline entries sourced from shared App Group UserDefaults and storage.
@@ -62,13 +95,33 @@ struct Provider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<SimpleEntry>) -> Void) {
         let entry = getEntry()
-        let timeline = Timeline(entries: [entry], policy: .never)
+        // Primary updates are pushed via WidgetCenter.shared.reloadAllTimelines() from the main app
+        // whenever playback state changes. This periodic fallback (15 min) guards against missed
+        // reloads (e.g. if the widget extension was suspended and didn't receive the Darwin notification).
+        let nextRefresh = Date().addingTimeInterval(15 * 60)
+        let timeline = Timeline(entries: [entry], policy: .after(nextRefresh))
         completion(timeline)
     }
 
     private func getEntry() -> SimpleEntry {
-        let defaults = UserDefaults(suiteName: "group.com.ymacplayer")
-        
+        guard let defaults = UserDefaults(suiteName: "group.com.ymacplayer") else {
+            return SimpleEntry(
+                date: Date(),
+                title: "Ymac Player",
+                artist: "",
+                artworkImage: nil,
+                isPlaying: false,
+                currentTime: 0,
+                duration: 0,
+                isShuffle: false,
+                repeatMode: 0,
+                isLoggedIn: true,
+                hasSelectedPlaylist: false,
+                language: .english,
+                playlists: []
+            )
+        }
+
         var artworkImage: NSImage? = nil
         if let containerURL = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: "group.com.ymacplayer"
@@ -79,23 +132,23 @@ struct Provider: TimelineProvider {
             }
         }
 
-        let rawTitle = defaults?.string(forKey: "widgetTitle") ?? "Ymac Player"
+        let rawTitle = defaults.string(forKey: "widgetTitle") ?? "Ymac Player"
         let title = (rawTitle == "YouTube Music" || rawTitle == "U-Music") ? "Ymac Player" : rawTitle
-        
-        let artist = defaults?.string(forKey: "widgetArtist") ?? ""
-        let isPlaying = defaults?.bool(forKey: "widgetIsPlaying") ?? false
-        let currentTime = defaults?.double(forKey: "widgetCurrentTime") ?? 0
-        let duration = defaults?.double(forKey: "widgetDuration") ?? 0
-        let isShuffle = defaults?.bool(forKey: "widgetIsShuffle") ?? false
-        let repeatMode = defaults?.integer(forKey: "widgetRepeatMode") ?? 0
-        let isLoggedIn = defaults?.object(forKey: "widgetIsLoggedIn") != nil ? defaults!.bool(forKey: "widgetIsLoggedIn") : true
-        let hasSelectedPlaylist = defaults?.bool(forKey: "widgetHasSelectedPlaylist") ?? false
-        
-        let langRaw = defaults?.string(forKey: "widgetLanguage") ?? "en"
+
+        let artist = defaults.string(forKey: "widgetArtist") ?? ""
+        let isPlaying = defaults.bool(forKey: "widgetIsPlaying")
+        let currentTime = defaults.double(forKey: "widgetCurrentTime")
+        let duration = defaults.double(forKey: "widgetDuration")
+        let isShuffle = defaults.bool(forKey: "widgetIsShuffle")
+        let repeatMode = defaults.integer(forKey: "widgetRepeatMode")
+        let isLoggedIn = defaults.object(forKey: "widgetIsLoggedIn") != nil ? defaults.bool(forKey: "widgetIsLoggedIn") : true
+        let hasSelectedPlaylist = defaults.bool(forKey: "widgetHasSelectedPlaylist")
+
+        let langRaw = defaults.string(forKey: "widgetLanguage") ?? "en"
         let language = AppLanguage(rawValue: langRaw) ?? .english
 
         var playlistsArray: [WidgetPlaylistItem] = []
-        if let rawList = defaults?.array(forKey: "widgetPlaylists") as? [[String: String]] {
+        if let rawList = defaults.array(forKey: "widgetPlaylists") as? [[String: String]] {
             playlistsArray = rawList.compactMap { dict in
                 guard let id = dict["id"], let t = dict["title"] else { return nil }
                 return WidgetPlaylistItem(id: id, title: t)
@@ -139,7 +192,7 @@ struct YmacPlayerWidgetEntryView: View {
 
 // MARK: - Small Widget View (.systemSmall)
 
-struct SmallWidgetView: View {
+struct SmallWidgetView: View, WidgetTimeFormatting {
     let entry: SimpleEntry
 
     var body: some View {
@@ -338,33 +391,22 @@ struct SmallWidgetView: View {
             }
         }
     }
-
-    private var trackStartDate: Date {
-        Date().addingTimeInterval(-entry.currentTime)
-    }
-
-    private var timerRange: ClosedRange<Date>? {
-        guard entry.duration > 0, entry.currentTime < entry.duration else { return nil }
-        let now = Date()
-        let startDate = now.addingTimeInterval(-entry.currentTime)
-        let endDate = startDate.addingTimeInterval(entry.duration - entry.currentTime)
-        guard endDate > startDate else { return nil }
-        return startDate...endDate
-    }
-
-    private func formatTime(_ seconds: Double) -> String {
-        guard !seconds.isNaN, !seconds.isInfinite, seconds > 0 else { return "0:00" }
-        let total = Int(seconds)
-        let mins = total / 60
-        let secs = total % 60
-        return String(format: "%d:%02d", mins, secs)
-    }
 }
 
 // MARK: - Medium Widget View (.systemMedium)
 
-struct MediumWidgetView: View {
+struct MediumWidgetView: View, WidgetTimeFormatting {
     let entry: SimpleEntry
+
+    private var displayArtist: String {
+        if !entry.artist.isEmpty {
+            return entry.artist
+        } else if entry.isPlaying {
+            return LocalizedStrings.playing(entry.language)
+        } else {
+            return LocalizedStrings.paused(entry.language)
+        }
+    }
 
     var body: some View {
         VStack(spacing: 6) {
@@ -435,7 +477,7 @@ struct MediumWidgetView: View {
                                 .foregroundColor(.white)
                                 .lineLimit(1)
                         }
-                        
+
                         Text(displayArtist)
                             .font(.system(size: 11))
                             .foregroundColor(.white.opacity(0.85))
@@ -560,37 +602,6 @@ struct MediumWidgetView: View {
                 )
             }
         }
-    }
-
-    private var displayArtist: String {
-        if !entry.artist.isEmpty {
-            return entry.artist
-        } else if entry.isPlaying {
-            return LocalizedStrings.playing(entry.language)
-        } else {
-            return LocalizedStrings.paused(entry.language)
-        }
-    }
-
-    private var trackStartDate: Date {
-        Date().addingTimeInterval(-entry.currentTime)
-    }
-
-    private var timerRange: ClosedRange<Date>? {
-        guard entry.duration > 0, entry.currentTime < entry.duration else { return nil }
-        let now = Date()
-        let startDate = now.addingTimeInterval(-entry.currentTime)
-        let endDate = startDate.addingTimeInterval(entry.duration - entry.currentTime)
-        guard endDate > startDate else { return nil }
-        return startDate...endDate
-    }
-
-    private func formatTime(_ seconds: Double) -> String {
-        guard !seconds.isNaN, !seconds.isInfinite, seconds > 0 else { return "0:00" }
-        let total = Int(seconds)
-        let mins = total / 60
-        let secs = total % 60
-        return String(format: "%d:%02d", mins, secs)
     }
 }
 
