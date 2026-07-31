@@ -1,5 +1,8 @@
 import SwiftUI
 
+// MARK: - Application Entry Point
+
+/// The main entry point for the Ymac Player macOS application.
 @main
 struct YmacPlayerApp: App {
 

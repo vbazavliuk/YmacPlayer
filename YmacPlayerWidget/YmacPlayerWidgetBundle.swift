@@ -1,17 +1,12 @@
-//
-//  YmacPlayerWidgetBundle.swift
-//  YmacPlayerWidget
-//
-//  Created by Valentyn Bazavluk on 30.07.26.
-//
-
 import WidgetKit
 import SwiftUI
 
+// MARK: - Widget Bundle Entry Point
+
+/// The main entry point for the Ymac Player widget bundle extension.
 @main
 struct YmacPlayerWidgetBundle: WidgetBundle {
     var body: some Widget {
         YmacPlayerWidget()
-        YmacPlayerWidgetControl()
     }
 }

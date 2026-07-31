@@ -6,48 +6,167 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		D438BC9D301B8ECA00F7F04F /* YmacPlayerWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D438BC89301B8EC900F7F04F /* YmacPlayerWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D438BCFD301BB10800F7F04F /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D438BC8D301B8EC900F7F04F /* SwiftUI.framework */; };
+		D438BD00301BB10900F7F04F /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D438BC8B301B8EC900F7F04F /* WidgetKit.framework */; };
+		D438BD07301BB15400F7F04F /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D438BC8D301B8EC900F7F04F /* SwiftUI.framework */; };
+		D438BD0A301BB15500F7F04F /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D438BC8B301B8EC900F7F04F /* WidgetKit.framework */; };
+		D4955C8C301D285B00120B9B /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = D4955C8A301D285100120B9B /* README.md */; };
+		D4955C8D301D285B00120B9B /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = D4955C8A301D285100120B9B /* README.md */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D438BC9B301B8ECA00F7F04F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D4E82AED301B50910046F9E0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D438BC88301B8EC900F7F04F;
+			remoteInfo = YmacPlayerWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D438BCA2301B8ECA00F7F04F /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				D438BC9D301B8ECA00F7F04F /* YmacPlayerWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
-		D4E82AF5301B50910046F9E0 /* YmacPlayer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YmacPlayer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D438BC89301B8EC900F7F04F /* YmacPlayerWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = YmacPlayerWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D438BC8B301B8EC900F7F04F /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		D438BC8D301B8EC900F7F04F /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		D438BCFA301BAB5900F7F04F /* YmacPlayerWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = YmacPlayerWidgetExtension.entitlements; sourceTree = "<group>"; };
+		D4955C8A301D285100120B9B /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		D4E82B22301B5D6D0046F9E0 /* YmacPlayer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YmacPlayer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		D4955C98301D2B0C00120B9B /* Exceptions for "YmacPlayerWidget" folder in "YmacPlayer" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+				Info.plist,
+				YmacPlayerWidget.swift,
+				YmacPlayerWidgetBundle.swift,
+			);
+			target = D4E82AF4301B50910046F9E0 /* YmacPlayer */;
+		};
+		D4955C99301D2C4400120B9B /* Exceptions for "YmacPlayer" folder in "YmacPlayerWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+				System/YmacPlayerApp.swift,
+			);
+			target = D438BC88301B8EC900F7F04F /* YmacPlayerWidgetExtension */;
+		};
+		D4C73D97301D397300418763 /* Exceptions for "YmacPlayerWidget" folder in "YmacPlayerWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = D438BC88301B8EC900F7F04F /* YmacPlayerWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		D438BC8F301B8EC900F7F04F /* YmacPlayerWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D4955C98301D2B0C00120B9B /* Exceptions for "YmacPlayerWidget" folder in "YmacPlayer" target */,
+				D4C73D97301D397300418763 /* Exceptions for "YmacPlayerWidget" folder in "YmacPlayerWidgetExtension" target */,
+			);
+			path = YmacPlayerWidget;
+			sourceTree = "<group>";
+		};
 		D4E82AF7301B50910046F9E0 /* YmacPlayer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D4955C99301D2C4400120B9B /* Exceptions for "YmacPlayer" folder in "YmacPlayerWidgetExtension" target */,
+			);
 			path = YmacPlayer;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		D438BC86301B8EC900F7F04F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D438BD07301BB15400F7F04F /* SwiftUI.framework in Frameworks */,
+				D438BD0A301BB15500F7F04F /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D4E82AF2301B50910046F9E0 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D438BCFD301BB10800F7F04F /* SwiftUI.framework in Frameworks */,
+				D438BD00301BB10900F7F04F /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		D438BC8A301B8EC900F7F04F /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				D438BC8B301B8EC900F7F04F /* WidgetKit.framework */,
+				D438BC8D301B8EC900F7F04F /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		D4E82AEC301B50910046F9E0 = {
 			isa = PBXGroup;
 			children = (
+				D4955C8A301D285100120B9B /* README.md */,
+				D438BCFA301BAB5900F7F04F /* YmacPlayerWidgetExtension.entitlements */,
 				D4E82AF7301B50910046F9E0 /* YmacPlayer */,
-				D4E82AF6301B50910046F9E0 /* Products */,
+				D4E82B22301B5D6D0046F9E0 /* YmacPlayer.app */,
+				D438BC89301B8EC900F7F04F /* YmacPlayerWidgetExtension.appex */,
+				D438BC8F301B8EC900F7F04F /* YmacPlayerWidget */,
+				D438BC8A301B8EC900F7F04F /* Frameworks */,
 			);
-			sourceTree = "<group>";
-		};
-		D4E82AF6301B50910046F9E0 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				D4E82AF5301B50910046F9E0 /* YmacPlayer.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		D438BC88301B8EC900F7F04F /* YmacPlayerWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D438BC9F301B8ECA00F7F04F /* Build configuration list for PBXNativeTarget "YmacPlayerWidgetExtension" */;
+			buildPhases = (
+				D438BC85301B8EC900F7F04F /* Sources */,
+				D438BC86301B8EC900F7F04F /* Frameworks */,
+				D438BC87301B8EC900F7F04F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				D438BC8F301B8EC900F7F04F /* YmacPlayerWidget */,
+				D4E82AF7301B50910046F9E0 /* YmacPlayer */,
+			);
+			name = YmacPlayerWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = YmacPlayerWidgetExtension;
+			productReference = D438BC89301B8EC900F7F04F /* YmacPlayerWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		D4E82AF4301B50910046F9E0 /* YmacPlayer */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D4E82B00301B50920046F9E0 /* Build configuration list for PBXNativeTarget "YmacPlayer" */;
@@ -55,19 +174,22 @@
 				D4E82AF1301B50910046F9E0 /* Sources */,
 				D4E82AF2301B50910046F9E0 /* Frameworks */,
 				D4E82AF3301B50910046F9E0 /* Resources */,
+				D438BCA2301B8ECA00F7F04F /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				D438BC9C301B8ECA00F7F04F /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
+				D438BC8F301B8EC900F7F04F /* YmacPlayerWidget */,
 				D4E82AF7301B50910046F9E0 /* YmacPlayer */,
 			);
 			name = YmacPlayer;
 			packageProductDependencies = (
 			);
 			productName = YmacPlayer;
-			productReference = D4E82AF5301B50910046F9E0 /* YmacPlayer.app */;
+			productReference = D4E82B22301B5D6D0046F9E0 /* YmacPlayer.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -80,6 +202,9 @@
 				LastSwiftUpdateCheck = 2660;
 				LastUpgradeCheck = 2660;
 				TargetAttributes = {
+					D438BC88301B8EC900F7F04F = {
+						CreatedOnToolsVersion = 26.6;
+					};
 					D4E82AF4301B50910046F9E0 = {
 						CreatedOnToolsVersion = 26.6;
 					};
@@ -95,26 +220,43 @@
 			mainGroup = D4E82AEC301B50910046F9E0;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = D4E82AF6301B50910046F9E0 /* Products */;
+			productRefGroup = D4E82AEC301B50910046F9E0;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				D4E82AF4301B50910046F9E0 /* YmacPlayer */,
+				D438BC88301B8EC900F7F04F /* YmacPlayerWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		D438BC87301B8EC900F7F04F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D4955C8D301D285B00120B9B /* README.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D4E82AF3301B50910046F9E0 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D4955C8C301D285B00120B9B /* README.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		D438BC85301B8EC900F7F04F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D4E82AF1301B50910046F9E0 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -124,7 +266,136 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		D438BC9C301B8ECA00F7F04F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D438BC88301B8EC900F7F04F /* YmacPlayerWidgetExtension */;
+			targetProxy = D438BC9B301B8ECA00F7F04F /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		D438BCA0301B8ECA00F7F04F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				AUTOMATION_APPLE_EVENTS = NO;
+				CODE_SIGN_ENTITLEMENTS = YmacPlayerWidgetExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9R2Z2PT297;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
+				ENABLE_FILE_ACCESS_MOVIES_FOLDER = readwrite;
+				ENABLE_FILE_ACCESS_MUSIC_FOLDER = readwrite;
+				ENABLE_FILE_ACCESS_PICTURE_FOLDER = readwrite;
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = YES;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = YES;
+				ENABLE_RESOURCE_ACCESS_CAMERA = YES;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = YES;
+				ENABLE_RESOURCE_ACCESS_LOCATION = YES;
+				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = YES;
+				ENABLE_RESOURCE_ACCESS_USB = YES;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = YmacPlayerWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = YmacPlayerWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.valentin.YmacPlayer.YmacPlayerWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				REGISTER_APP_GROUPS = YES;
+				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
+				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
+				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
+				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
+				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
+				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		D438BCA1301B8ECA00F7F04F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				AUTOMATION_APPLE_EVENTS = NO;
+				CODE_SIGN_ENTITLEMENTS = YmacPlayerWidgetExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9R2Z2PT297;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
+				ENABLE_FILE_ACCESS_MOVIES_FOLDER = readwrite;
+				ENABLE_FILE_ACCESS_MUSIC_FOLDER = readwrite;
+				ENABLE_FILE_ACCESS_PICTURE_FOLDER = readwrite;
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = YES;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = YES;
+				ENABLE_RESOURCE_ACCESS_CAMERA = YES;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = YES;
+				ENABLE_RESOURCE_ACCESS_LOCATION = YES;
+				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = YES;
+				ENABLE_RESOURCE_ACCESS_USB = YES;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = YmacPlayerWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = YmacPlayerWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.valentin.YmacPlayer.YmacPlayerWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				REGISTER_APP_GROUPS = YES;
+				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
+				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
+				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
+				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
+				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
+				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		D4E82AFE301B50920046F9E0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -244,12 +515,18 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CODE_SIGN_ENTITLEMENTS = YmacPlayer/YmacPlayer.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_APP_SANDBOX = YES;
+				DEVELOPMENT_TEAM = 9R2Z2PT297;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Ymac;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_LSUIElement = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -263,14 +540,16 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 26.5;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.valentin.YmacPlayer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
-				SDKROOT = auto;
+				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				STRIP_INSTALLED_PRODUCT = YES;
+				SUPPORTED_PLATFORMS = macosx;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -286,12 +565,18 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CODE_SIGN_ENTITLEMENTS = YmacPlayer/YmacPlayer.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_APP_SANDBOX = YES;
+				DEVELOPMENT_TEAM = 9R2Z2PT297;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Ymac;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_LSUIElement = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -305,14 +590,16 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 26.5;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.valentin.YmacPlayer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
-				SDKROOT = auto;
+				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				STRIP_INSTALLED_PRODUCT = YES;
+				SUPPORTED_PLATFORMS = macosx;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -326,6 +613,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		D438BC9F301B8ECA00F7F04F /* Build configuration list for PBXNativeTarget "YmacPlayerWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D438BCA0301B8ECA00F7F04F /* Debug */,
+				D438BCA1301B8ECA00F7F04F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		D4E82AF0301B50910046F9E0 /* Build configuration list for PBXProject "YmacPlayer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
