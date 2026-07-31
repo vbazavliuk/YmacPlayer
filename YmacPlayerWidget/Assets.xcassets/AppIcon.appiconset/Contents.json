@@ -1,36 +1,6 @@
 {
   "images" : [
     {
-      "filename" : "Unknown-2.jpg",
-      "idiom" : "universal",
-      "platform" : "ios",
-      "size" : "1024x1024"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "dark"
-        }
-      ],
-      "filename" : "Gemini_Generated_Image_cvqct3cvqct3cvqc.png",
-      "idiom" : "universal",
-      "platform" : "ios",
-      "size" : "1024x1024"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "tinted"
-        }
-      ],
-      "filename" : "Unknown-2 1.jpg",
-      "idiom" : "universal",
-      "platform" : "ios",
-      "size" : "1024x1024"
-    },
-    {
       "filename" : "icon_16x16.png",
       "idiom" : "mac",
       "scale" : "1x",
@@ -85,7 +55,7 @@
       "size" : "512x512"
     },
     {
-      "filename" : "icon_512x512@2x.png",
+      "filename" : "Unknown-2.jpg",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "512x512"
