@@ -26,7 +26,7 @@
 
 ## 📋 Requirements
 
-* **macOS**: 13.0 (Ventura) or later *(Control Widgets require macOS 15.0+)*.
+* **macOS**: 26.0 (Ventura) or later.
 * **Xcode**: 15.0 or later.
 * **Swift**: 5.9 / 6.0.
 
