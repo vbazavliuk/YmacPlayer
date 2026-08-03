@@ -11,6 +11,7 @@ enum YTMJavaScript {
     window.hasAutoPausedInitial = false;
     window.attachedVideoListeners = false;
     window.lastFullSyncTime = 0;
+    window.isSystemSleeping = false;
 
     function normStr(str) {
         if (!str) return '';
@@ -96,6 +97,10 @@ enum YTMJavaScript {
             window.attachedVideoListeners = true;
             ['play', 'pause', 'ended', 'timeupdate'].forEach(function(evt) {
                 video.addEventListener(evt, function() {
+                    if (evt === 'play' && window.isSystemSleeping) {
+                        video.pause();
+                        return;
+                    }
                     syncYTM(true);
                 });
             });
@@ -106,6 +111,12 @@ enum YTMJavaScript {
         try {
             attachVideoEvents();
 
+            var video = document.querySelector('video');
+
+            if (window.isSystemSleeping && video && !video.paused) {
+                video.pause();
+            }
+
             var now = Date.now();
             var isFullSync = !isEventTriggered || (now - window.lastFullSyncTime > 1800);
 
@@ -113,10 +124,15 @@ enum YTMJavaScript {
                 window.lastFullSyncTime = now;
             }
 
-            var video = document.querySelector('video');
             var isPlaylistUrl =
                 window.location.href.includes('list=') ||
                 window.location.href.includes('browse/');
+
+            var currentListId = '';
+            var listMatch = window.location.href.match(/list=([a-zA-Z0-9_-]+)/);
+            if (listMatch) {
+                currentListId = listMatch[1];
+            }
 
             if (!isPlaylistUrl && !window.hasAutoPausedInitial && video && !video.paused) {
                 video.pause();
@@ -345,7 +361,6 @@ enum YTMJavaScript {
                     queue = rawQueue.slice(selectedIdx - 10);
                 }
 
-                // Multilingual term filters for system navigation links
                 var ignoreTerms = [
                     'главная', 'обзор', 'библиотека', 'настройки', 'подкасты', 'чарты',
                     'home', 'explore', 'library', 'podcasts', 'charts', 'settings',
@@ -436,7 +451,6 @@ enum YTMJavaScript {
                 });
             }
 
-            // Triple protection check for user authentication state
             var signInBtn =
                 document.querySelector('a[href*="ServiceLogin"]') ||
                 document.querySelector('ytmusic-sign-in-button-renderer') ||
@@ -471,7 +485,8 @@ enum YTMJavaScript {
                 artworkUrl: artworkUrl,
                 isLiked: isLiked,
                 isDisliked: isDisliked,
-                repeatMode: repeatMode
+                repeatMode: repeatMode,
+                currentListId: currentListId
             };
 
             if (isFullSync) {

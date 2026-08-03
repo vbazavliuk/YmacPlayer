@@ -95,9 +95,6 @@ struct Provider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<SimpleEntry>) -> Void) {
         let entry = getEntry()
-        // Primary updates are pushed via WidgetCenter.shared.reloadAllTimelines() from the main app
-        // whenever playback state changes. This periodic fallback (15 min) guards against missed
-        // reloads (e.g. if the widget extension was suspended and didn't receive the Darwin notification).
         let nextRefresh = Date().addingTimeInterval(15 * 60)
         let timeline = Timeline(entries: [entry], policy: .after(nextRefresh))
         completion(timeline)
@@ -142,7 +139,10 @@ struct Provider: TimelineProvider {
         let isShuffle = defaults.bool(forKey: "widgetIsShuffle")
         let repeatMode = defaults.integer(forKey: "widgetRepeatMode")
         let isLoggedIn = defaults.object(forKey: "widgetIsLoggedIn") != nil ? defaults.bool(forKey: "widgetIsLoggedIn") : true
-        let hasSelectedPlaylist = defaults.bool(forKey: "widgetHasSelectedPlaylist")
+        
+        let storedHasSelectedPlaylist = defaults.bool(forKey: "widgetHasSelectedPlaylist")
+        let hasActiveTrack = !title.isEmpty && title != "Ymac Player" && title != "Ymac"
+        let effectiveHasPlaylist = storedHasSelectedPlaylist || hasActiveTrack
 
         let langRaw = defaults.string(forKey: "widgetLanguage") ?? "en"
         let language = AppLanguage(rawValue: langRaw) ?? .english
@@ -166,7 +166,7 @@ struct Provider: TimelineProvider {
             isShuffle: isShuffle,
             repeatMode: repeatMode,
             isLoggedIn: isLoggedIn,
-            hasSelectedPlaylist: hasSelectedPlaylist,
+            hasSelectedPlaylist: effectiveHasPlaylist,
             language: language,
             playlists: playlistsArray
         )

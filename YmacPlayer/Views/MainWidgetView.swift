@@ -146,7 +146,7 @@ struct MainWidgetView: View {
         ZStack(alignment: .bottom) {
             artwork
 
-            if controller.hasSelectedPlaylist {
+            if controller.hasActiveTrack {
                 artworkGradient
                 playerOverlay
             }
@@ -158,7 +158,7 @@ struct MainWidgetView: View {
 
     @ViewBuilder
     private var artwork: some View {
-        if controller.hasSelectedPlaylist,
+        if controller.hasActiveTrack,
            let url = URL(string: controller.artworkUrl),
            !controller.artworkUrl.isEmpty {
 
@@ -214,11 +214,7 @@ struct MainWidgetView: View {
     @ViewBuilder
     private var trackText: some View {
         VStack(spacing: 2) {
-            if !controller.currentTitle.isEmpty,
-               controller.currentTitle != "Ymac Player",
-               controller.currentTitle != "Ymac",
-               controller.currentTitle != "YouTube Music" {
-
+            if controller.hasActiveTrack {
                 Text(controller.currentTitle)
                     .font(.system(size: 13, weight: .bold))
                     .foregroundColor(.white)
@@ -386,8 +382,8 @@ struct MainWidgetView: View {
 
             Spacer()
         }
-        .disabled(!controller.hasSelectedPlaylist)
-        .opacity(controller.hasSelectedPlaylist ? 1.0 : 0.4)
+        .disabled(!controller.hasActiveTrack)
+        .opacity(controller.hasActiveTrack ? 1.0 : 0.4)
     }
 }
 
