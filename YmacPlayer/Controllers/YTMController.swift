@@ -32,6 +32,7 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
 
     let webView: WKWebView
     private var backgroundWindow: NSWindow?
+    private(set) var userWantsPlayback: Bool = false
     private var shouldAutoPlayOnLoad: Bool = false
     private var sleepWakeTask: Task<Void, Never>?
     private var artworkDownloadTask: Task<Void, Never>?
@@ -157,34 +158,54 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
 
     private func handleSleep() {
         sleepWakeTask?.cancel()
+        userWantsPlayback = false
         shouldAutoPlayOnLoad = false
         isPlaying = false
         runJS("""
         window.isSystemSleeping = true;
+        window.userWantsPlayback = false;
         var v = document.querySelector('video');
-        if (v) { v.pause(); }
+        if (v) {
+            v.pause();
+            v.muted = true;
+        }
         """)
+        updateNowPlayingInfo()
         updateWidgetDataIfNeeded(forceReload: true)
     }
 
     private func handleWake() {
         shouldAutoPlayOnLoad = false
         isPlaying = false
+        userWantsPlayback = false
 
         sleepWakeTask?.cancel()
         sleepWakeTask = Task { [weak self] in
-            for _ in 0..<6 {
+            for _ in 0..<4 {
                 if Task.isCancelled { break }
                 self?.runJS("""
                 window.isSystemSleeping = true;
+                window.userWantsPlayback = false;
                 var v = document.querySelector('video');
-                if (v && !v.paused) { v.pause(); }
+                if (v) {
+                    if (!v.paused) { v.pause(); }
+                    v.muted = true;
+                }
                 """)
                 try? await Task.sleep(nanoseconds: 500_000_000)
             }
             if !Task.isCancelled {
-                self?.runJS("window.isSystemSleeping = false;")
+                self?.runJS("""
+                window.isSystemSleeping = false;
+                window.userWantsPlayback = false;
+                var v = document.querySelector('video');
+                if (v) {
+                    if (!v.paused) { v.pause(); }
+                    v.muted = true;
+                }
+                """)
             }
+            self?.updateNowPlayingInfo()
             self?.updateWidgetDataIfNeeded(forceReload: true)
         }
     }
@@ -217,23 +238,39 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         if let currentURL = webView.url?.absoluteString, currentURL.contains("music.youtube.com") {
-            runJS("if (typeof window.syncYTM === 'function') { window.syncYTM(true); }")
+            let wantsPlayback = self.userWantsPlayback
+            runJS("""
+            window.userWantsPlayback = \(wantsPlayback);
+            var v = document.querySelector('video');
+            if (v) {
+                if (!window.userWantsPlayback) {
+                    v.pause();
+                    v.muted = true;
+                } else {
+                    v.muted = false;
+                }
+            }
+            if (typeof window.syncYTM === 'function') { window.syncYTM(true); }
+            """)
 
-            if shouldAutoPlayOnLoad {
+            if shouldAutoPlayOnLoad && userWantsPlayback {
                 shouldAutoPlayOnLoad = false
                 runJS("""
                 (function autoPlay() {
                     var count = 0;
                     var interval = setInterval(function() {
-                        if (window.isSystemSleeping) {
+                        if (window.isSystemSleeping || !window.userWantsPlayback) {
                             clearInterval(interval);
                             return;
                         }
                         var v = document.querySelector('video');
                         var playBtn = document.querySelector('#play-pause-button') || document.querySelector('.play-pause-button');
-                        if (v && v.paused) {
-                            v.play().catch(function() {});
-                            if (playBtn) playBtn.click();
+                        if (v) {
+                            v.muted = false;
+                            if (v.paused) {
+                                v.play().catch(function() {});
+                                if (playBtn) playBtn.click();
+                            }
                         }
                         if ((v && !v.paused) || count > 25) {
                             clearInterval(interval);
@@ -242,12 +279,15 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
                     }, 300);
                 })();
                 """)
+            } else {
+                shouldAutoPlayOnLoad = false
             }
         }
     }
 
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         isPlaying = false
+        shouldAutoPlayOnLoad = false
         updateWidgetDataIfNeeded(forceReload: true)
         webView.reload()
     }
@@ -308,7 +348,7 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
         let userScript = WKUserScript(
             source: YTMJavaScript.syncScript,
             injectionTime: .atDocumentEnd,
-            forMainFrameOnly: false
+            forMainFrameOnly: true
         )
         webView.configuration.userContentController.addUserScript(userScript)
     }
@@ -321,6 +361,7 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
     ) {
         Task { @MainActor in
             guard
+                message.frameInfo.isMainFrame,
                 message.name == "ytmBridge",
                 let dictionary = message.body as? [String: Any]
             else { return }
@@ -334,9 +375,6 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
 
                 if self.isLoggedIn != effectiveLoggedIn {
                     self.isLoggedIn = effectiveLoggedIn
-                    if !effectiveLoggedIn {
-                        self.resetPlaylistSelection()
-                    }
                     self.updateWidgetDataIfNeeded(forceReload: true)
                 }
             }
@@ -355,7 +393,10 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
             }
 
             if let playing = dictionary["isPlaying"] as? Bool {
-                self.isPlaying = playing
+                let effectivePlaying = playing && self.userWantsPlayback
+                if self.isPlaying != effectivePlaying {
+                    self.isPlaying = effectivePlaying
+                }
             }
 
             if !self.isEditingSlider {
@@ -364,7 +405,9 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
                 }
 
                 if let trackDuration = dictionary["duration"] as? Double, !trackDuration.isNaN, !trackDuration.isInfinite {
-                    self.duration = max(0, trackDuration)
+                    if trackDuration > 0 || !self.hasActiveTrack {
+                        self.duration = max(0, trackDuration)
+                    }
                 }
             }
 
@@ -475,7 +518,7 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
             )
         }
 
-        if parsedQueue != queue {
+        if !parsedQueue.isEmpty, parsedQueue != queue {
             queue = parsedQueue
         }
     }
@@ -510,13 +553,13 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
 
         commandCenter.playCommand.isEnabled = true
         commandCenter.playCommand.addTarget { [weak self] _ in
-            Task { @MainActor in self?.togglePlay() }
+            Task { @MainActor in self?.play() }
             return .success
         }
 
         commandCenter.pauseCommand.isEnabled = true
         commandCenter.pauseCommand.addTarget { [weak self] _ in
-            Task { @MainActor in self?.togglePlay() }
+            Task { @MainActor in self?.pause() }
             return .success
         }
 
@@ -616,6 +659,8 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
         libraryFilter = filter
         UserDefaults.standard.set(filter.rawValue, forKey: "libraryFilter")
 
+        userWantsPlayback = false
+        shouldAutoPlayOnLoad = false
         currentPlaylistId = ""
         hasSelectedPlaylist = false
         isShuffle = false
@@ -635,8 +680,12 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
 
         runJS("""
+        window.userWantsPlayback = false;
         var v = document.querySelector('video');
-        if (v) { v.pause(); }
+        if (v) {
+            v.pause();
+            v.muted = true;
+        }
         window.hasAutoPausedInitial = false;
         """)
 
@@ -658,6 +707,8 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
     // MARK: - Player State Management
 
     func resetPlaylistSelection() {
+        userWantsPlayback = false
+        shouldAutoPlayOnLoad = false
         currentPlaylistId = ""
         hasSelectedPlaylist = false
         isShuffle = false
@@ -676,8 +727,12 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
 
         runJS("""
+        window.userWantsPlayback = false;
         var v = document.querySelector('video');
-        if (v) { v.pause(); }
+        if (v) {
+            v.pause();
+            v.muted = true;
+        }
         window.hasAutoPausedInitial = false;
         """)
 
@@ -698,6 +753,7 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
         currentPlaylistId = cleanID
         hasSelectedPlaylist = true
         isShuffle = false
+        userWantsPlayback = true
         shouldAutoPlayOnLoad = true
 
         let targetURL = "https://music.youtube.com/watch?list=\(cleanID)"
@@ -715,32 +771,99 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
         webView.evaluateJavaScript(script, completionHandler: nil)
     }
 
-    func togglePlay() {
+    func play() {
+        userWantsPlayback = true
+        isPlaying = true
         sleepWakeTask?.cancel()
         runJS("""
         window.isSystemSleeping = false;
-        var v = document.querySelector('video');
-        if (v) {
-            v.paused ? v.play() : v.pause();
+        if (typeof window.setPlaybackIntent === 'function') {
+            window.setPlaybackIntent(true);
         } else {
-            document.querySelector('#play-pause-button')?.click();
+            window.userWantsPlayback = true;
+            var v = document.querySelector('video');
+            if (v) {
+                v.muted = false;
+                v.play().catch(function() {});
+            } else {
+                var playBtn = document.querySelector('#play-pause-button') || document.querySelector('.play-pause-button');
+                if (playBtn) playBtn.click();
+            }
         }
         """)
+        updateNowPlayingInfo()
+        updateWidgetDataIfNeeded()
+    }
+
+    func pause() {
+        userWantsPlayback = false
+        isPlaying = false
+        runJS("""
+        if (typeof window.setPlaybackIntent === 'function') {
+            window.setPlaybackIntent(false);
+        } else {
+            window.userWantsPlayback = false;
+            var v = document.querySelector('video');
+            if (v) {
+                v.pause();
+                v.muted = true;
+            } else {
+                var playBtn = document.querySelector('#play-pause-button') || document.querySelector('.play-pause-button');
+                if (playBtn) playBtn.click();
+            }
+        }
+        """)
+        updateNowPlayingInfo()
+        updateWidgetDataIfNeeded()
+    }
+
+    func togglePlay() {
+        if isPlaying {
+            pause()
+        } else {
+            play()
+        }
     }
 
     func nextTrack() {
-        runJS("document.querySelector('.next-button, [aria-label*=\"Next\"]')?.click();")
+        if isPlaying {
+            userWantsPlayback = true
+        }
+        runJS("""
+        if (window.userWantsPlayback) {
+            var v = document.querySelector('video');
+            if (v) v.muted = false;
+        }
+        document.querySelector('.next-button, [aria-label*="Next"]')?.click();
+        """)
     }
 
     func previousTrack() {
-        runJS("document.querySelector('.previous-button, [aria-label*=\"Previous\"]')?.click();")
+        if isPlaying {
+            userWantsPlayback = true
+        }
+        runJS("""
+        if (window.userWantsPlayback) {
+            var v = document.querySelector('video');
+            if (v) v.muted = false;
+        }
+        document.querySelector('.previous-button, [aria-label*="Previous"]')?.click();
+        """)
     }
 
     func playQueueItem(at originalIndex: Int) {
         guard hasActiveTrack, originalIndex >= 0 else { return }
+        userWantsPlayback = true
+        isPlaying = true
+        sleepWakeTask?.cancel()
 
         runJS(#"""
         (function() {
+            window.isSystemSleeping = false;
+            window.userWantsPlayback = true;
+            var v = document.querySelector('video');
+            if (v) v.muted = false;
+
             var getItems = window.getQueueItems || function() {
                 var queuePanel = document.querySelector('ytmusic-player-queue, #queue, ytmusic-playlist-panel-renderer[is-queue]');
                 var elements = [];
@@ -790,6 +913,8 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
             }
         })();
         """#)
+        updateNowPlayingInfo()
+        updateWidgetDataIfNeeded()
     }
 
     func likeTrack() {

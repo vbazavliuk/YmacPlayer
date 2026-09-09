@@ -11,8 +11,26 @@ enum YTMJavaScript {
         window.hasTriggeredGuide = false;
         window.hasAutoPausedInitial = false;
         window.isSystemSleeping = false;
+        window.userWantsPlayback = false;
         window.lastAttachedVideo = null;
         window.lastFullSyncTime = 0;
+
+        window.setPlaybackIntent = function(wantsPlayback) {
+            window.userWantsPlayback = !!wantsPlayback;
+            const v = document.querySelector('video');
+            if (v) {
+                if (!window.userWantsPlayback || window.isSystemSleeping) {
+                    v.pause();
+                    v.muted = true;
+                } else {
+                    v.muted = false;
+                    v.play().catch(function() {});
+                }
+            }
+            if (typeof window.syncYTM === 'function') {
+                window.syncYTM(true);
+            }
+        };
 
         function normStr(str) {
             if (!str) return '';
@@ -64,11 +82,22 @@ enum YTMJavaScript {
             const video = document.querySelector('video');
             if (video && video !== window.lastAttachedVideo) {
                 window.lastAttachedVideo = video;
+                if (!window.userWantsPlayback || window.isSystemSleeping) {
+                    video.muted = true;
+                    if (!video.paused) {
+                        video.pause();
+                    }
+                }
                 ['play', 'pause', 'ended', 'timeupdate'].forEach(evt => {
                     video.addEventListener(evt, () => {
-                        if (evt === 'play' && window.isSystemSleeping) {
-                            video.pause();
-                            return;
+                        if (evt === 'play') {
+                            if (!window.userWantsPlayback || window.isSystemSleeping) {
+                                video.pause();
+                                video.muted = true;
+                                return;
+                            } else {
+                                video.muted = false;
+                            }
                         }
                         syncYTM(evt !== 'timeupdate');
                     });
@@ -81,22 +110,19 @@ enum YTMJavaScript {
                 attachVideoEvents();
                 const video = document.querySelector('video');
 
-                if (window.isSystemSleeping && video && !video.paused) {
-                    video.pause();
+                if ((!window.userWantsPlayback || window.isSystemSleeping) && video) {
+                    if (!video.paused) {
+                        video.pause();
+                    }
+                    video.muted = true;
                 }
 
                 const now = Date.now();
                 const isFullSync = isStateChange || (now - window.lastFullSyncTime > 1800);
                 if (isFullSync) window.lastFullSyncTime = now;
 
-                const isPlaylistUrl = window.location.href.includes('list=') || window.location.href.includes('browse/');
                 const listMatch = window.location.href.match(/list=([a-zA-Z0-9_-]+)/);
                 const currentListId = listMatch ? listMatch[1] : '';
-
-                if (!isPlaylistUrl && !window.hasAutoPausedInitial && video && !video.paused) {
-                    video.pause();
-                    window.hasAutoPausedInitial = true;
-                }
 
                 if (!window.hasTriggeredGuide) {
                     const gBtn = document.querySelector('ytmusic-guide-button button, #guide-button button, tp-yt-paper-icon-button#button');
@@ -107,7 +133,7 @@ enum YTMJavaScript {
                     }
                 }
 
-                const isPlaying = video ? (!video.paused && video.currentTime > 0 && video.readyState > 2) : false;
+                const isPlaying = video ? (!video.paused && video.currentTime > 0 && video.readyState > 2 && !!window.userWantsPlayback && !window.isSystemSleeping) : false;
                 const currentTime = (video && !isNaN(video.currentTime)) ? video.currentTime : 0;
                 const duration = (video && !isNaN(video.duration) && isFinite(video.duration)) ? video.duration : 0;
 

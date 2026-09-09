@@ -11,7 +11,7 @@
             ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
             <ActionContent
                title = "Run Script"
-               scriptText = "# Type a script or drag a script file from your workspace to insert its path.&#10;cp -R &quot;${BUILT_PRODUCTS_DIR}/${FULL_PRODUCT_NAME}&quot; /Applications/&#10;killall Chronod NotificationCenter 2&gt;/dev/null || true&#10;">
+               scriptText = "# Safely copy build product to Applications if available&#10;if [ -n &quot;${FULL_PRODUCT_NAME}&quot; ] &amp;&amp; [ -d &quot;${BUILT_PRODUCTS_DIR}/${FULL_PRODUCT_NAME}&quot; ]; then&#10;  rm -rf &quot;/Applications/${FULL_PRODUCT_NAME}&quot; 2&gt;/dev/null || true&#10;  cp -R &quot;${BUILT_PRODUCTS_DIR}/${FULL_PRODUCT_NAME}&quot; /Applications/ 2&gt;/dev/null || true&#10;  killall Chronod NotificationCenter 2&gt;/dev/null || true&#10;fi&#10;">
             </ActionContent>
          </ExecutionAction>
       </PostActions>
