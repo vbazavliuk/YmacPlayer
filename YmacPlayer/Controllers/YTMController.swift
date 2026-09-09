@@ -7,7 +7,6 @@ import WidgetKit
 
 // MARK: - Weak Script Message Handler Proxy
 
-/// A weak proxy wrapper for `WKScriptMessageHandler` to prevent retain cycles.
 private final class WeakScriptMessageHandler: NSObject, WKScriptMessageHandler {
     private weak var delegate: WKScriptMessageHandler?
 
@@ -24,9 +23,8 @@ private final class WeakScriptMessageHandler: NSObject, WKScriptMessageHandler {
     }
 }
 
-// MARK: - Main Player Controller & JavaScript Bridge
+// MARK: - Main Player Controller
 
-/// The central controller managing the WebView, playback state, Now Playing info, and widget synchronization for Ymac Player.
 @MainActor
 final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, WKNavigationDelegate {
 
@@ -36,6 +34,8 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
     private var backgroundWindow: NSWindow?
     private var shouldAutoPlayOnLoad: Bool = false
     private var sleepWakeTask: Task<Void, Never>?
+    private var artworkDownloadTask: Task<Void, Never>?
+    private var sleepObserverTasks: [Task<Void, Never>] = []
 
     @Published var isPlaying: Bool = false
     @Published var currentTitle: String = "Ymac Player"
@@ -48,7 +48,6 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
     @Published var isLiked: Bool = false
     @Published var isDisliked: Bool = false
     @Published var isShuffle: Bool = false
-
     @Published var repeatMode: Int = 0
 
     @Published var currentTime: Double = 0
@@ -61,7 +60,6 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
     @Published var currentLanguage: AppLanguage = .english
     @Published var libraryFilter: LibraryFilter = .favoritePlaylists
 
-    /// Computed property indicating whether any track is actively loaded or playing.
     var hasActiveTrack: Bool {
         return !currentTitle.isEmpty &&
                currentTitle != "Ymac Player" &&
@@ -71,7 +69,6 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
 
     private var lastLoadedArtworkUrl: String = ""
     private var cachedArtworkImage: NSImage?
-    
     private let sharedDefaults = UserDefaults(suiteName: "group.com.ymacplayer")
 
     private var lastWidgetTitle: String = ""
@@ -100,23 +97,20 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
         configuration.userContentController = contentController
 
         webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 1000, height: 700), configuration: configuration)
-
         webView.customUserAgent = """
         Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) \
-        AppleWebKit/605.1.15 (KHTML, like Gecko) \
+        WebKit/605.1.15 (KHTML, like Gecko) \
         Version/17.6 Safari/605.1.15
         """
 
         super.init()
 
         webView.navigationDelegate = self
-
         contentController.add(WeakScriptMessageHandler(delegate: self), name: "ytmBridge")
         setupRemoteCommands()
         setupDarwinNotificationListeners()
         setupSleepNotificationObserver()
         injectJavaScript()
-        
         attachToBackgroundWindow()
 
         if let url = URL(string: "https://music.youtube.com") {
@@ -126,33 +120,39 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
 
     // MARK: - Sleep & Power Management
 
-    /// Comprehensive Swift 6 compliant observer for system sleep, display sleep, lock screen, and wake events using AsyncSequence.
     private func setupSleepNotificationObserver() {
+        sleepObserverTasks.forEach { $0.cancel() }
+        sleepObserverTasks.removeAll()
+
         let center = NSWorkspace.shared.notificationCenter
 
-        Task { @MainActor [weak self] in
+        let sleepTask = Task { @MainActor [weak self] in
             for await _ in center.notifications(named: NSWorkspace.willSleepNotification) {
                 self?.handleSleep()
             }
         }
+        sleepObserverTasks.append(sleepTask)
 
-        Task { @MainActor [weak self] in
+        let screenSleepTask = Task { @MainActor [weak self] in
             for await _ in center.notifications(named: NSWorkspace.screensDidSleepNotification) {
                 self?.handleSleep()
             }
         }
+        sleepObserverTasks.append(screenSleepTask)
 
-        Task { @MainActor [weak self] in
+        let wakeTask = Task { @MainActor [weak self] in
             for await _ in center.notifications(named: NSWorkspace.didWakeNotification) {
                 self?.handleWake()
             }
         }
+        sleepObserverTasks.append(wakeTask)
 
-        Task { @MainActor [weak self] in
+        let screenWakeTask = Task { @MainActor [weak self] in
             for await _ in center.notifications(named: NSWorkspace.screensDidWakeNotification) {
                 self?.handleWake()
             }
         }
+        sleepObserverTasks.append(screenWakeTask)
     }
 
     private func handleSleep() {
@@ -171,12 +171,11 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
         shouldAutoPlayOnLoad = false
         isPlaying = false
 
-        // Keep a 3-second hard pause shield after wake to block YT Music's WS/reconnect auto-play logic
         sleepWakeTask?.cancel()
-        sleepWakeTask = Task {
+        sleepWakeTask = Task { [weak self] in
             for _ in 0..<6 {
                 if Task.isCancelled { break }
-                self.runJS("""
+                self?.runJS("""
                 window.isSystemSleeping = true;
                 var v = document.querySelector('video');
                 if (v && !v.paused) { v.pause(); }
@@ -184,15 +183,14 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
                 try? await Task.sleep(nanoseconds: 500_000_000)
             }
             if !Task.isCancelled {
-                self.runJS("window.isSystemSleeping = false;")
+                self?.runJS("window.isSystemSleeping = false;")
             }
+            self?.updateWidgetDataIfNeeded(forceReload: true)
         }
-        updateWidgetDataIfNeeded(forceReload: true)
     }
 
     // MARK: - Background Window Management
 
-    /// Keeps the WKWebView attached to an off-screen invisible window so macOS doesn't freeze media playback when the popover is closed.
     func attachToBackgroundWindow() {
         if backgroundWindow == nil {
             let window = NSWindow(
@@ -207,7 +205,7 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
             window.alphaValue = 0.0
             self.backgroundWindow = window
         }
-        
+
         if webView.window != backgroundWindow {
             webView.window?.makeFirstResponder(nil)
             backgroundWindow?.contentView = webView
@@ -219,7 +217,7 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         if let currentURL = webView.url?.absoluteString, currentURL.contains("music.youtube.com") {
-            runJS("if (typeof syncYTM === 'function') { syncYTM(true); }")
+            runJS("if (typeof window.syncYTM === 'function') { window.syncYTM(true); }")
 
             if shouldAutoPlayOnLoad {
                 shouldAutoPlayOnLoad = false
@@ -248,7 +246,6 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
         }
     }
 
-    /// Automatically handles WebKit process termination/crashes by reloading the page safely.
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         isPlaying = false
         updateWidgetDataIfNeeded(forceReload: true)
@@ -313,7 +310,6 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
             injectionTime: .atDocumentEnd,
             forMainFrameOnly: false
         )
-
         webView.configuration.userContentController.addUserScript(userScript)
     }
 
@@ -327,9 +323,7 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
             guard
                 message.name == "ytmBridge",
                 let dictionary = message.body as? [String: Any]
-            else {
-                return
-            }
+            else { return }
 
             self.updateQueue(from: dictionary)
             self.updatePlaylists(from: dictionary)
@@ -365,12 +359,12 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
             }
 
             if !self.isEditingSlider {
-                if let current = dictionary["currentTime"] as? Double {
-                    self.currentTime = current
+                if let current = dictionary["currentTime"] as? Double, !current.isNaN, !current.isInfinite {
+                    self.currentTime = max(0, current)
                 }
 
-                if let trackDuration = dictionary["duration"] as? Double {
-                    self.duration = trackDuration
+                if let trackDuration = dictionary["duration"] as? Double, !trackDuration.isNaN, !trackDuration.isInfinite {
+                    self.duration = max(0, trackDuration)
                 }
             }
 
@@ -428,7 +422,7 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
         defaults.set(isWidgetActive, forKey: "widgetHasSelectedPlaylist")
         defaults.set(currentLanguage.rawValue, forKey: "widgetLanguage")
 
-        let playlistDicts = userPlaylists.map { ["id": $0.id, "title": $0.title] }
+        let playlistDicts = userPlaylists.map { ["id": $0.id, "title": $0.title, "path": $0.path] }
         defaults.set(playlistDicts, forKey: "widgetPlaylists")
 
         if titleChanged || artistChanged || playStateChanged || shuffleChanged || repeatChanged || loggedInChanged || playlistSelectedChanged || langChanged || forceReload {
@@ -439,7 +433,7 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
             lastWidgetRepeatMode = repeatMode
             lastWidgetIsLoggedIn = isLoggedIn
             lastWidgetHasSelectedPlaylist = isWidgetActive
-            
+
             WidgetCenter.shared.reloadAllTimelines()
         }
     }
@@ -509,7 +503,7 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
         }
     }
 
-    // MARK: - System Remote Commands & Control Center
+    // MARK: - System Remote Commands
 
     private func setupRemoteCommands() {
         let commandCenter = MPRemoteCommandCenter.shared()
@@ -556,9 +550,7 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
     }
 
     func updateNowPlayingInfo() {
-        guard
-            hasActiveTrack
-        else {
+        guard hasActiveTrack else {
             MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
             return
         }
@@ -581,11 +573,14 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
             lastLoadedArtworkUrl = artworkUrl
             MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
 
-            Task { [weak self] in
+            artworkDownloadTask?.cancel()
+            artworkDownloadTask = Task { [weak self] in
                 guard
                     let (data, _) = try? await URLSession.shared.data(from: url),
                     let image = NSImage(data: data)
                 else { return }
+
+                if Task.isCancelled { return }
 
                 await MainActor.run { [weak self] in
                     guard let self = self, self.artworkUrl == targetUrlString else { return }
@@ -601,7 +596,6 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
                     self.updateWidgetDataIfNeeded(forceReload: true)
                 }
             }
-
         } else {
             cachedArtworkImage = nil
             lastLoadedArtworkUrl = ""
@@ -657,7 +651,7 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
         if let url = URL(string: targetURL) {
             webView.load(URLRequest(url: url))
         }
-        
+
         updateWidgetDataIfNeeded(forceReload: true)
     }
 
@@ -690,27 +684,28 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
         if let url = URL(string: "https://music.youtube.com") {
             webView.load(URLRequest(url: url))
         }
-        
+
         updateWidgetDataIfNeeded(forceReload: true)
     }
 
     func openPlaylistById(_ playlistID: String) {
-        guard !playlistID.isEmpty else {
+        let cleanID = playlistID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanID.isEmpty else {
             resetPlaylistSelection()
             return
         }
 
-        currentPlaylistId = playlistID
+        currentPlaylistId = cleanID
         hasSelectedPlaylist = true
         isShuffle = false
         shouldAutoPlayOnLoad = true
 
-        let targetURL = "https://music.youtube.com/watch?list=\(playlistID)"
+        let targetURL = "https://music.youtube.com/watch?list=\(cleanID)"
 
         if let url = URL(string: targetURL) {
             webView.load(URLRequest(url: url))
         }
-        
+
         updateWidgetDataIfNeeded(forceReload: true)
     }
 
@@ -734,38 +729,64 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
     }
 
     func nextTrack() {
-        runJS("document.querySelector('.next-button')?.click();")
+        runJS("document.querySelector('.next-button, [aria-label*=\"Next\"]')?.click();")
     }
 
     func previousTrack() {
-        runJS("document.querySelector('.previous-button')?.click();")
+        runJS("document.querySelector('.previous-button, [aria-label*=\"Previous\"]')?.click();")
     }
 
     func playQueueItem(at originalIndex: Int) {
-        guard hasActiveTrack else { return }
+        guard hasActiveTrack, originalIndex >= 0 else { return }
 
         runJS(#"""
         (function() {
-            var validItems = getQueueItems();
+            var getItems = window.getQueueItems || function() {
+                var queuePanel = document.querySelector('ytmusic-player-queue, #queue, ytmusic-playlist-panel-renderer[is-queue]');
+                var elements = [];
+                if (queuePanel) {
+                    elements = Array.from(queuePanel.querySelectorAll('ytmusic-player-queue-item, ytmusic-playlist-panel-video-renderer'));
+                }
+                if (!elements || elements.length === 0) {
+                    var mainContents = document.querySelector('#contents.ytmusic-playlist-video-list-renderer, #items.ytmusic-playlist-panel-renderer');
+                    if (mainContents) {
+                        elements = Array.from(mainContents.querySelectorAll('ytmusic-playlist-panel-video-renderer, ytmusic-responsive-list-item-renderer'));
+                    }
+                }
+                return elements.filter(function(item) {
+                    return !item.closest('ytmusic-player-bar, #player-bar, ytmusic-playlist-header-renderer, #header');
+                });
+            };
+
+            var validItems = getItems();
             if (validItems && validItems[\#(originalIndex)]) {
                 var item = validItems[\#(originalIndex)];
                 var target =
+                    item.querySelector('ytmusic-play-button-renderer #button') ||
                     item.querySelector('ytmusic-play-button-renderer') ||
                     item.querySelector('#play-button') ||
                     item.querySelector('.play-button') ||
                     item.querySelector('a') ||
+                    item.querySelector('.song-title') ||
                     item.querySelector('.title') ||
                     item;
 
                 var button = target.querySelector('button') || target;
-                button.dispatchEvent(
-                    new MouseEvent('click', {
+
+                ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach(function(evtName) {
+                    var evt = new MouseEvent(evtName, {
                         bubbles: true,
                         cancelable: true,
-                        view: window
-                    })
-                );
-                if (button.click) { button.click(); }
+                        view: window,
+                        composed: true,
+                        detail: 1
+                    });
+                    button.dispatchEvent(evt);
+                });
+
+                if (typeof button.click === 'function') {
+                    button.click();
+                }
             }
         })();
         """#)
@@ -785,55 +806,23 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
         guard hasActiveTrack else { return }
         isShuffle.toggle()
         updateWidgetDataIfNeeded(forceReload: true)
-
-        runJS("""
-        (function() {
-            var shuffleButton =
-                document.querySelector('ytmusic-player-bar .shuffle-button') ||
-                document.querySelector('ytmusic-player-bar tp-yt-paper-icon-button.shuffle-button') ||
-                document.querySelector('ytmusic-player-bar [title*="Shuffle"]') ||
-                document.querySelector('ytmusic-player-bar [title*="Перемеша"]') ||
-                document.querySelector('ytmusic-player-bar [title*="Переміша"]') ||
-                document.querySelector('.shuffle-button');
-
-            if (shuffleButton) {
-                var button = shuffleButton.querySelector('button') || shuffleButton.querySelector('#button') || shuffleButton;
-                button.click();
-            }
-        })();
-        """)
+        runJS("document.querySelector('ytmusic-player-bar .shuffle-button button, ytmusic-player-bar [aria-label*=\"Shuffle\"]')?.click();")
     }
 
     func toggleRepeat() {
         guard hasActiveTrack else { return }
         repeatMode = (repeatMode + 1) % 3
         updateWidgetDataIfNeeded(forceReload: true)
-
-        runJS("""
-        (function() {
-            var repeatButton =
-                document.querySelector('ytmusic-player-bar .repeat-button') ||
-                document.querySelector('ytmusic-player-bar tp-yt-paper-icon-button.repeat-button') ||
-                document.querySelector('ytmusic-player-bar [title*="Repeat"]') ||
-                document.querySelector('ytmusic-player-bar [title*="Повтор"]') ||
-                document.querySelector('ytmusic-player-bar [aria-label*="Repeat"]') ||
-                document.querySelector('ytmusic-player-bar [aria-label*="Повтор"]');
-
-            if (repeatButton) {
-                var button = repeatButton.querySelector('button') || repeatButton.querySelector('#button') || repeatButton;
-                button.click();
-            }
-        })();
-        """)
+        runJS("document.querySelector('ytmusic-player-bar .repeat-button button, ytmusic-player-bar [aria-label*=\"Repeat\"]')?.click();")
     }
 
     func seekTo(_ time: Double) {
-        guard hasActiveTrack else { return }
-        currentTime = time
+        guard hasActiveTrack, !time.isNaN, !time.isInfinite else { return }
+        currentTime = max(0, time)
 
         runJS("""
         var v = document.querySelector('video');
-        if (v) { v.currentTime = \(time); }
+        if (v) { v.currentTime = \(currentTime); }
         """)
 
         updateNowPlayingInfo()

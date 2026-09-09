@@ -1,14 +1,25 @@
 import SwiftUI
 
-// MARK: - Main Widget View
-
-/// The primary UI view displayed inside the macOS menu bar popover for Ymac Player.
 struct MainWidgetView: View {
 
     @EnvironmentObject private var controller: YTMController
 
     @State private var showFullBrowser = false
     @State private var showQueuePopover = false
+
+    private var safeDuration: Double {
+        guard !controller.duration.isNaN, !controller.duration.isInfinite, controller.duration > 0 else {
+            return 1.0
+        }
+        return controller.duration
+    }
+
+    private var safeCurrentTime: Double {
+        guard !controller.currentTime.isNaN, !controller.currentTime.isInfinite, controller.currentTime >= 0 else {
+            return 0.0
+        }
+        return min(controller.currentTime, safeDuration)
+    }
 
     var body: some View {
         VStack(spacing: 10) {
@@ -130,14 +141,12 @@ struct MainWidgetView: View {
         }
     }
 
-    // MARK: - Compact Player Views
+    // MARK: - Compact Player
 
     private var compactPlayer: some View {
         VStack(spacing: 10) {
             artworkPlayer
-
             Divider()
-
             reactionControls
         }
     }
@@ -161,7 +170,6 @@ struct MainWidgetView: View {
         if controller.hasActiveTrack,
            let url = URL(string: controller.artworkUrl),
            !controller.artworkUrl.isEmpty {
-
             AsyncImage(url: url) { phase in
                 if let image = phase.image {
                     image
@@ -185,7 +193,6 @@ struct MainWidgetView: View {
     private var artworkGradient: some View {
         VStack {
             Spacer()
-
             Rectangle()
                 .fill(.ultraThinMaterial)
                 .mask(
@@ -202,9 +209,7 @@ struct MainWidgetView: View {
     private var playerOverlay: some View {
         VStack(spacing: 8) {
             trackText
-
             progressControls
-
             playbackControls
         }
         .padding(.horizontal, 12)
@@ -241,10 +246,10 @@ struct MainWidgetView: View {
         VStack(spacing: 1) {
             Slider(
                 value: Binding(
-                    get: { min(controller.currentTime, max(controller.duration, 1)) },
+                    get: { safeCurrentTime },
                     set: { controller.currentTime = $0 }
                 ),
-                in: 0...max(controller.duration, 1),
+                in: 0...safeDuration,
                 onEditingChanged: { editing in
                     controller.isEditingSlider = editing
                     if !editing {
@@ -387,12 +392,18 @@ struct MainWidgetView: View {
     }
 }
 
-// MARK: - Helpers
+// MARK: - Safe Time Formatter
 
-func formatTime(_ timeInSeconds: Double) -> String {
-    guard !timeInSeconds.isNaN, !timeInSeconds.isInfinite else { return "0:00" }
+public func formatTime(_ timeInSeconds: Double) -> String {
+    guard !timeInSeconds.isNaN, !timeInSeconds.isInfinite, timeInSeconds >= 0 else { return "0:00" }
     let totalSeconds = Int(timeInSeconds)
-    let minutes = totalSeconds / 60
+    let hours = totalSeconds / 3600
+    let minutes = (totalSeconds % 3600) / 60
     let seconds = totalSeconds % 60
-    return String(format: "%d:%02d", minutes, seconds)
+
+    if hours > 0 {
+        return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        return String(format: "%d:%02d", minutes, seconds)
+    }
 }

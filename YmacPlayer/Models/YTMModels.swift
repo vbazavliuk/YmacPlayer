@@ -1,33 +1,51 @@
 import Foundation
 
-// MARK: - Playlist & Queue Data Models
+// MARK: - Core Domain Models
 
-/// Represents a user playlist in Ymac Player.
-struct YTMPlaylist: Identifiable, Hashable {
-    /// The unique identifier of the playlist (e.g., YouTube Music playlist ID).
-    let id: String
-    
-    /// The localized display title of the playlist.
-    let title: String
-    
-    /// The relative or absolute URL path to the playlist.
-    let path: String
+public struct YTMPlaylist: Identifiable, Hashable, Codable, Sendable {
+    public let id: String
+    public let title: String
+    public let path: String
+
+    public init(id: String, title: String, path: String) {
+        self.id = id
+        self.title = title
+        self.path = path
+    }
 }
 
-/// Represents an individual track within the active playback queue.
-struct YTMQueueItem: Identifiable, Hashable {
-    /// The unique identifier for the queue item.
-    let id: String
-    
-    /// The original zero-based index of the item within the raw Web Queue.
-    let originalIndex: Int
-    
-    /// The track title.
-    let title: String
-    
-    /// The artist or contributor name.
-    let artist: String
-    
-    /// Indicates whether this track is currently selected or playing.
-    let isSelected: Bool
+public struct YTMQueueItem: Identifiable, Hashable, Codable, Sendable {
+    public let id: String
+    public let originalIndex: Int
+    public let title: String
+    public let artist: String
+    public let isSelected: Bool
+
+    public init(
+        id: String,
+        originalIndex: Int,
+        title: String,
+        artist: String,
+        isSelected: Bool
+    ) {
+        self.id = id
+        self.originalIndex = originalIndex
+        self.title = title
+        self.artist = artist
+        self.isSelected = isSelected
+    }
+}
+
+public struct PlayerSnapshot: Codable, Sendable {
+    public let title: String
+    public let artist: String
+    public let isPlaying: Bool
+    public let currentTime: Double
+    public let duration: Double
+    public let isShuffle: Bool
+    public let repeatMode: Int
+    public let isLoggedIn: Bool
+    public let hasSelectedPlaylist: Bool
+    public let language: String
+    public let playlists: [YTMPlaylist]
 }

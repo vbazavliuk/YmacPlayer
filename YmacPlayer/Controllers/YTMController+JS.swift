@@ -5,501 +5,348 @@ import Foundation
 /// Provides JavaScript scripts to be injected into the WKWebView for synchronizing YouTube Music player state with Ymac Player.
 enum YTMJavaScript {
 
-    /// Injection script that monitors playback state, queue, playlists, and user authentication, posting structured updates to the `ytmBridge` native handler.
+    /// Injection script that monitors playback state, queue, playlists, and user authentication, posting structured updates to the native handler.
     static let syncScript = #"""
-    window.hasTriggeredGuide = false;
-    window.hasAutoPausedInitial = false;
-    window.attachedVideoListeners = false;
-    window.lastFullSyncTime = 0;
-    window.isSystemSleeping = false;
+    (() => {
+        window.hasTriggeredGuide = false;
+        window.hasAutoPausedInitial = false;
+        window.isSystemSleeping = false;
+        window.lastAttachedVideo = null;
+        window.lastFullSyncTime = 0;
 
-    function normStr(str) {
-        if (!str) return '';
-        return str.toLowerCase()
-            .replace(/\([^)]*\)/g, '')
-            .replace(/\[[^\]]*\]/g, '')
-            .replace(/feat\..*/gi, '')
-            .replace(/ft\..*/gi, '')
-            .replace(/with\..*/gi, '')
-            .replace(/[^a-z0-9а-яіїєґ]/gi, '')
-            .trim();
-    }
-
-    function titlesMatch(t1, t2) {
-        var n1 = normStr(t1);
-        var n2 = normStr(t2);
-
-        if (!n1 || !n2) return false;
-        if (n1 === n2) return true;
-
-        if (n1.length > 3 && n2.length > 3) {
-            if (n1.indexOf(n2) !== -1 || n2.indexOf(n1) !== -1) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function getQueueItems() {
-        var queuePanel =
-            document.querySelector('ytmusic-player-queue') ||
-            document.querySelector('#queue') ||
-            document.querySelector('ytmusic-playlist-panel-renderer[is-queue]');
-
-        var elements = [];
-
-        if (queuePanel) {
-            elements = queuePanel.querySelectorAll('ytmusic-player-queue-item');
-            if (!elements || elements.length === 0) {
-                elements = queuePanel.querySelectorAll('ytmusic-playlist-panel-video-renderer');
-            }
+        function normStr(str) {
+            if (!str) return '';
+            return str.toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/\([^)]*\)/g, '')
+                .replace(/\[[^\]]*\]/g, '')
+                .replace(/feat\..*/gi, '')
+                .replace(/ft\..*/gi, '')
+                .replace(/with\..*/gi, '')
+                .replace(/[^\p{L}\p{N}]/gu, '')
+                .trim();
         }
 
-        if (!elements || elements.length === 0) {
-            var mainContents =
-                document.querySelector('#contents.ytmusic-playlist-video-list-renderer') ||
-                document.querySelector('#items.ytmusic-playlist-panel-renderer');
-
-            if (mainContents) {
-                elements = mainContents.querySelectorAll(
-                    'ytmusic-playlist-panel-video-renderer, ytmusic-responsive-list-item-renderer'
-                );
+        function titlesMatch(t1, t2) {
+            const n1 = normStr(t1);
+            const n2 = normStr(t2);
+            if (!n1 || !n2) return false;
+            if (n1 === n2) return true;
+            if (n1.length > 3 && n2.length > 3) {
+                return n1.includes(n2) || n2.includes(n1);
             }
+            return false;
         }
 
-        if (!elements || elements.length === 0) {
-            elements = document.querySelectorAll('ytmusic-player-queue-item');
-        }
-
-        var valid = [];
-        elements.forEach(function(item) {
-            if (
-                item.closest('ytmusic-player-bar') ||
-                item.closest('#player-bar') ||
-                item.closest('ytmusic-playlist-header-renderer') ||
-                item.closest('ytmusic-responsive-header-renderer') ||
-                item.closest('ytmusic-editable-playlist-detail-header-renderer') ||
-                item.closest('ytmusic-detail-header-renderer') ||
-                item.closest('#header') ||
-                item.closest('.header')
-            ) {
-                return;
+        function getQueueItems() {
+            const queuePanel = document.querySelector('ytmusic-player-queue, #queue, ytmusic-playlist-panel-renderer[is-queue]');
+            let elements = [];
+            if (queuePanel) {
+                elements = Array.from(queuePanel.querySelectorAll('ytmusic-player-queue-item, ytmusic-playlist-panel-video-renderer'));
             }
-            valid.push(item);
-        });
-
-        return valid;
-    }
-
-    function attachVideoEvents() {
-        var video = document.querySelector('video');
-        if (video && !window.attachedVideoListeners) {
-            window.attachedVideoListeners = true;
-            ['play', 'pause', 'ended', 'timeupdate'].forEach(function(evt) {
-                video.addEventListener(evt, function() {
-                    if (evt === 'play' && window.isSystemSleeping) {
-                        video.pause();
-                        return;
-                    }
-                    syncYTM(true);
-                });
-            });
-        }
-    }
-
-    function syncYTM(isEventTriggered) {
-        try {
-            attachVideoEvents();
-
-            var video = document.querySelector('video');
-
-            if (window.isSystemSleeping && video && !video.paused) {
-                video.pause();
-            }
-
-            var now = Date.now();
-            var isFullSync = !isEventTriggered || (now - window.lastFullSyncTime > 1800);
-
-            if (isFullSync) {
-                window.lastFullSyncTime = now;
-            }
-
-            var isPlaylistUrl =
-                window.location.href.includes('list=') ||
-                window.location.href.includes('browse/');
-
-            var currentListId = '';
-            var listMatch = window.location.href.match(/list=([a-zA-Z0-9_-]+)/);
-            if (listMatch) {
-                currentListId = listMatch[1];
-            }
-
-            if (!isPlaylistUrl && !window.hasAutoPausedInitial && video && !video.paused) {
-                video.pause();
-                window.hasAutoPausedInitial = true;
-            }
-
-            if (!window.hasTriggeredGuide) {
-                var gBtn =
-                    document.querySelector('ytmusic-guide-button button') ||
-                    document.querySelector('#guide-button button') ||
-                    document.querySelector('tp-yt-paper-icon-button#button');
-
-                if (gBtn) {
-                    gBtn.click();
-                    window.hasTriggeredGuide = true;
-                    setTimeout(function() {
-                        if (gBtn) gBtn.click();
-                    }, 350);
+            if (elements.length === 0) {
+                const mainContents = document.querySelector('#contents.ytmusic-playlist-video-list-renderer, #items.ytmusic-playlist-panel-renderer');
+                if (mainContents) {
+                    elements = Array.from(mainContents.querySelectorAll('ytmusic-playlist-panel-video-renderer, ytmusic-responsive-list-item-renderer'));
                 }
             }
-
-            var isPlaying = video
-                ? (!video.paused && video.currentTime > 0 && video.readyState > 2)
-                : false;
-
-            var currentTime = video ? video.currentTime : 0;
-            var duration = video && !isNaN(video.duration) ? video.duration : 0;
-
-            var title = '';
-            var artist = '';
-
-            if (navigator.mediaSession && navigator.mediaSession.metadata) {
-                title = navigator.mediaSession.metadata.title || '';
-                artist = navigator.mediaSession.metadata.artist || '';
+            if (elements.length === 0) {
+                elements = Array.from(document.querySelectorAll('ytmusic-player-queue-item'));
             }
+            return elements.filter(item => !item.closest('ytmusic-player-bar, #player-bar, ytmusic-playlist-header-renderer, #header'));
+        }
 
-            if (!title) {
-                var titleEl =
-                    document.querySelector('ytmusic-player-bar .title') ||
-                    document.querySelector('ytmusic-player-bar yt-formatted-string.title') ||
-                    document.querySelector('.middle-controls .title');
+        // Экспортируем в window для вызова из Swift
+        window.getQueueItems = getQueueItems;
 
-                title = titleEl
-                    ? (titleEl.getAttribute('title') || titleEl.innerText || titleEl.textContent || '').trim()
-                    : '';
-            }
-
-            if (!artist) {
-                var artistEl =
-                    document.querySelector('ytmusic-player-bar .byline') ||
-                    document.querySelector('ytmusic-player-bar yt-formatted-string.byline') ||
-                    document.querySelector('ytmusic-player-bar .subtitle');
-
-                artist = artistEl
-                    ? (artistEl.getAttribute('title') || artistEl.innerText || artistEl.textContent || '').trim()
-                    : '';
-            }
-
-            var artworkUrl = '';
-            if (
-                navigator.mediaSession &&
-                navigator.mediaSession.metadata &&
-                navigator.mediaSession.metadata.artwork &&
-                navigator.mediaSession.metadata.artwork.length > 0
-            ) {
-                var artworks = navigator.mediaSession.metadata.artwork;
-                artworkUrl = artworks[artworks.length - 1].src || '';
-            }
-
-            if (!artworkUrl) {
-                var imgEl =
-                    document.querySelector('ytmusic-player-bar img.image') ||
-                    document.querySelector('.thumbnail-image-wrapper img') ||
-                    document.querySelector('#song-image img');
-
-                artworkUrl = imgEl ? imgEl.src : '';
-            }
-
-            if (artworkUrl) {
-                artworkUrl = artworkUrl
-                    .replace(/=w[0-9]+-h[0-9]+[^&]*/, '=w512-h512-l90-rj')
-                    .replace(/=s[0-9]+[^&]*/, '=s512');
-            }
-
-            var likeBtn =
-                document.querySelector('ytmusic-like-button-renderer #button-shape-like button') ||
-                document.querySelector('ytmusic-like-button-renderer .like-button button');
-
-            var isLiked = likeBtn
-                ? (likeBtn.getAttribute('aria-pressed') === 'true' || likeBtn.classList.contains('active'))
-                : false;
-
-            var dislikeBtn =
-                document.querySelector('ytmusic-like-button-renderer #button-shape-dislike button') ||
-                document.querySelector('ytmusic-like-button-renderer .dislike-button button');
-
-            var isDisliked = dislikeBtn
-                ? (dislikeBtn.getAttribute('aria-pressed') === 'true' || dislikeBtn.classList.contains('active'))
-                : false;
-
-            var repeatBtn =
-                document.querySelector('ytmusic-player-bar .repeat-button') ||
-                document.querySelector('ytmusic-player-bar tp-yt-paper-icon-button.repeat-button') ||
-                document.querySelector('ytmusic-player-bar [title*="Repeat"]') ||
-                document.querySelector('ytmusic-player-bar [title*="Повтор"]') ||
-                document.querySelector('ytmusic-player-bar [aria-label*="Repeat"]') ||
-                document.querySelector('ytmusic-player-bar [aria-label*="Повтор"]');
-
-            var repeatMode = 0;
-            if (repeatBtn) {
-                var label = (
-                    repeatBtn.getAttribute('aria-label') ||
-                    repeatBtn.getAttribute('title') || ''
-                ).toLowerCase();
-                var html = (repeatBtn.innerHTML || '').toLowerCase();
-                var isPressed =
-                    repeatBtn.getAttribute('aria-pressed') === 'true' ||
-                    repeatBtn.classList.contains('active');
-
-                if (
-                    html.includes('repeat_one') ||
-                    html.includes('repeat-one') ||
-                    label.includes('one') ||
-                    label.includes('1') ||
-                    label.includes('один') ||
-                    label.includes('одну')
-                ) {
-                    repeatMode = 2;
-                } else if (isPressed || label.includes('all') || label.includes('все') || label.includes('всі') || label.includes('alle') || label.includes('tutti')) {
-                    repeatMode = 1;
-                }
-            }
-
-            var queue = [];
-            var playlists = [];
-
-            if (isFullSync) {
-                var validItems = getQueueItems();
-                var activeDomIdx = -1;
-                var bestTitleIdx = -1;
-                var bestDomSelIdx = -1;
-
-                for (var k = 0; k < validItems.length; k++) {
-                    var el = validItems[k];
-                    var tEl =
-                        el.querySelector('.song-title') ||
-                        el.querySelector('.title') ||
-                        el.querySelector('yt-formatted-string.title');
-
-                    var tText = tEl ? (tEl.innerText || tEl.textContent || '').trim() : '';
-                    if (!tText) continue;
-
-                    var isDomSelected =
-                        el.hasAttribute('selected') ||
-                        el.classList.contains('selected') ||
-                        el.getAttribute('play-button-state') === 'playing' ||
-                        el.querySelector('ytmusic-equalizer') !== null;
-
-                    var isTitleMatching = titlesMatch(tText, title);
-
-                    if (isDomSelected && isTitleMatching && activeDomIdx === -1) {
-                        activeDomIdx = k;
-                    }
-                    if (isTitleMatching && bestTitleIdx === -1) {
-                        bestTitleIdx = k;
-                    }
-                    if (isDomSelected && bestDomSelIdx === -1) {
-                        bestDomSelIdx = k;
-                    }
-                }
-
-                if (activeDomIdx === -1) {
-                    activeDomIdx = bestTitleIdx !== -1 ? bestTitleIdx : bestDomSelIdx;
-                }
-
-                var rawQueue = [];
-                var seenMap = {};
-
-                validItems.forEach(function(item, idx) {
-                    var qTitleEl =
-                        item.querySelector('.song-title') ||
-                        item.querySelector('.title') ||
-                        item.querySelector('yt-formatted-string.title');
-
-                    var qArtistEl =
-                        item.querySelector('.byline') ||
-                        item.querySelector('.author') ||
-                        item.querySelector('.subtitle') ||
-                        item.querySelector('yt-formatted-string.byline');
-
-                    var qTitle = qTitleEl ? (qTitleEl.innerText || qTitleEl.textContent || '').trim() : '';
-                    var qArtist = qArtistEl ? (qArtistEl.innerText || qArtistEl.textContent || '').trim() : '';
-
-                    if (!qTitle) return;
-                    var dedupeKey = normStr(qTitle);
-                    if (!dedupeKey) return;
-
-                    var isCurrentActive = idx === activeDomIdx;
-
-                    if (seenMap.hasOwnProperty(dedupeKey)) {
-                        var existingIndex = seenMap[dedupeKey];
-                        if (isCurrentActive) {
-                            rawQueue[existingIndex].isSelected = true;
-                            rawQueue[existingIndex].originalIndex = idx;
-                            rawQueue[existingIndex].title = qTitle;
-                            if (qArtist) rawQueue[existingIndex].artist = qArtist;
+        function attachVideoEvents() {
+            const video = document.querySelector('video');
+            if (video && video !== window.lastAttachedVideo) {
+                window.lastAttachedVideo = video;
+                ['play', 'pause', 'ended', 'timeupdate'].forEach(evt => {
+                    video.addEventListener(evt, () => {
+                        if (evt === 'play' && window.isSystemSleeping) {
+                            video.pause();
+                            return;
                         }
-                        return;
-                    }
-
-                    var queueIndex = rawQueue.length;
-                    seenMap[dedupeKey] = queueIndex;
-
-                    rawQueue.push({
-                        id: 'q_' + queueIndex + '_' + encodeURIComponent(qTitle),
-                        originalIndex: idx,
-                        title: qTitle,
-                        artist: qArtist,
-                        isSelected: isCurrentActive
+                        syncYTM(evt !== 'timeupdate');
                     });
                 });
+            }
+        }
 
-                var selectedIdx = rawQueue.findIndex(function(item) { return item.isSelected; });
-                queue = rawQueue;
-                if (selectedIdx > 10) {
-                    queue = rawQueue.slice(selectedIdx - 10);
+        window.syncYTM = function(isStateChange) {
+            try {
+                attachVideoEvents();
+                const video = document.querySelector('video');
+
+                if (window.isSystemSleeping && video && !video.paused) {
+                    video.pause();
                 }
 
-                var ignoreTerms = [
-                    'главная', 'обзор', 'библиотека', 'настройки', 'подкасты', 'чарты',
-                    'home', 'explore', 'library', 'podcasts', 'charts', 'settings',
-                    'улучшить', 'upgrade', 'радио', 'radio', 'startseite', 'entdecken',
-                    'mediathek', 'inicio', 'explorar', 'biblioteca', 'boletim', 'esplora'
-                ];
+                const now = Date.now();
+                const isFullSync = isStateChange || (now - window.lastFullSyncTime > 1800);
+                if (isFullSync) window.lastFullSyncTime = now;
 
-                var isLibraryPlaylistsPage = window.location.href.includes('/library/playlists');
-                var seenPlaylists = {};
+                const isPlaylistUrl = window.location.href.includes('list=') || window.location.href.includes('browse/');
+                const listMatch = window.location.href.match(/list=([a-zA-Z0-9_-]+)/);
+                const currentListId = listMatch ? listMatch[1] : '';
 
-                var guideEntries = document.querySelectorAll(
-                    'ytmusic-guide-entry-renderer a[href*="list="], ' +
-                    '#guide-content a[href*="list="], ' +
-                    '#sections a[href*="list="], ' +
-                    'tp-yt-paper-item a[href*="list="]'
-                );
+                if (!isPlaylistUrl && !window.hasAutoPausedInitial && video && !video.paused) {
+                    video.pause();
+                    window.hasAutoPausedInitial = true;
+                }
 
-                guideEntries.forEach(function(link) {
-                    var href = link.getAttribute('href');
-                    if (!href) return;
+                if (!window.hasTriggeredGuide) {
+                    const gBtn = document.querySelector('ytmusic-guide-button button, #guide-button button, tp-yt-paper-icon-button#button');
+                    if (gBtn) {
+                        gBtn.click();
+                        window.hasTriggeredGuide = true;
+                        setTimeout(() => { if (gBtn) gBtn.click(); }, 350);
+                    }
+                }
 
-                    var listMatch = href.match(/list=([a-zA-Z0-9_-]+)/);
-                    if (!listMatch) return;
+                const isPlaying = video ? (!video.paused && video.currentTime > 0 && video.readyState > 2) : false;
+                const currentTime = (video && !isNaN(video.currentTime)) ? video.currentTime : 0;
+                const duration = (video && !isNaN(video.duration) && isFinite(video.duration)) ? video.duration : 0;
 
-                    var listId = listMatch[1];
-                    var isPersonalList =
-                        (href.includes('list=PL') || href.includes('list=LM') || href.includes('list=LL') || href.includes('list=FL')) &&
-                        !href.includes('list=RD') && !href.includes('list=OLAK') && !href.includes('watch?v=');
+                let title = '';
+                let artist = '';
+                if (navigator.mediaSession && navigator.mediaSession.metadata) {
+                    title = navigator.mediaSession.metadata.title || '';
+                    artist = navigator.mediaSession.metadata.artist || '';
+                }
 
-                    var text = link.innerText ? link.innerText.trim() : '';
-                    if (text) text = text.split('\n')[0].trim();
+                if (!title) {
+                    const titleEl = document.querySelector('ytmusic-player-bar .title, ytmusic-player-bar yt-formatted-string.title, .middle-controls .title');
+                    title = titleEl ? (titleEl.getAttribute('title') || titleEl.innerText || '').trim() : '';
+                }
+                if (!artist) {
+                    const artistEl = document.querySelector('ytmusic-player-bar .byline, ytmusic-player-bar yt-formatted-string.byline, ytmusic-player-bar .subtitle');
+                    artist = artistEl ? (artistEl.getAttribute('title') || artistEl.innerText || '').trim() : '';
+                }
 
-                    var lowerText = text.toLowerCase();
-                    var isSystem = ignoreTerms.some(function(term) {
-                        return lowerText === term || lowerText.includes('улучшить') || lowerText.includes('upgrade');
+                let artworkUrl = '';
+                if (navigator.mediaSession?.metadata?.artwork?.length) {
+                    const arts = navigator.mediaSession.metadata.artwork;
+                    artworkUrl = arts[arts.length - 1].src || '';
+                }
+                if (!artworkUrl) {
+                    const imgEl = document.querySelector('ytmusic-player-bar img.image, .thumbnail-image-wrapper img, #song-image img');
+                    artworkUrl = imgEl ? imgEl.src : '';
+                }
+                if (artworkUrl) {
+                    artworkUrl = artworkUrl.replace(/=w[0-9]+-h[0-9]+[^&]*/, '=w512-h512-l90-rj').replace(/=s[0-9]+[^&]*/, '=s512');
+                }
+
+                const likeBtn = document.querySelector('ytmusic-like-button-renderer #button-shape-like button, ytmusic-like-button-renderer .like-button button');
+                const isLiked = likeBtn ? (likeBtn.getAttribute('aria-pressed') === 'true' || likeBtn.classList.contains('active')) : false;
+
+                const dislikeBtn = document.querySelector('ytmusic-like-button-renderer #button-shape-dislike button, ytmusic-like-button-renderer .dislike-button button');
+                const isDisliked = dislikeBtn ? (dislikeBtn.getAttribute('aria-pressed') === 'true' || dislikeBtn.classList.contains('active')) : false;
+
+                const repeatBtn = document.querySelector('ytmusic-player-bar .repeat-button, ytmusic-player-bar tp-yt-paper-icon-button.repeat-button');
+                let repeatMode = 0;
+                if (repeatBtn) {
+                    const ariaLabel = (repeatBtn.getAttribute('aria-label') || repeatBtn.getAttribute('title') || '').toLowerCase();
+                    const iconHtml = (repeatBtn.innerHTML || '').toLowerCase();
+                    const isPressed = repeatBtn.getAttribute('aria-pressed') === 'true' || repeatBtn.classList.contains('active');
+
+                    if (iconHtml.includes('repeat_one') || iconHtml.includes('repeat-one') || ariaLabel.includes('one') || ariaLabel.includes('1') || ariaLabel.includes('один') || ariaLabel.includes('одну')) {
+                        repeatMode = 2;
+                    } else if (isPressed || ariaLabel.includes('all') || ariaLabel.includes('все') || ariaLabel.includes('всі') || ariaLabel.includes('alle') || ariaLabel.includes('tutti')) {
+                        repeatMode = 1;
+                    }
+                }
+
+                let queue = [];
+                let playlists = [];
+
+                if (isFullSync) {
+                    const validItems = getQueueItems();
+                    let activeDomIdx = -1;
+                    let bestTitleIdx = -1;
+                    let bestDomSelIdx = -1;
+
+                    for (let k = 0; k < validItems.length; k++) {
+                        const el = validItems[k];
+                        const tEl = el.querySelector('.song-title, .title, yt-formatted-string.title');
+                        const tText = tEl ? (tEl.innerText || tEl.textContent || '').trim() : '';
+                        if (!tText) continue;
+
+                        const isDomSelected = el.hasAttribute('selected') || el.classList.contains('selected') || el.getAttribute('play-button-state') === 'playing' || el.querySelector('ytmusic-equalizer') !== null;
+                        const isTitleMatching = titlesMatch(tText, title);
+
+                        if (isDomSelected && isTitleMatching && activeDomIdx === -1) activeDomIdx = k;
+                        if (isTitleMatching && bestTitleIdx === -1) bestTitleIdx = k;
+                        if (isDomSelected && bestDomSelIdx === -1) bestDomSelIdx = k;
+                    }
+
+                    if (activeDomIdx === -1) {
+                        activeDomIdx = bestTitleIdx !== -1 ? bestTitleIdx : bestDomSelIdx;
+                    }
+
+                    const rawQueue = [];
+                    const seenMap = {};
+
+                    validItems.forEach((item, idx) => {
+                        const qTitleEl = item.querySelector('.song-title, .title, yt-formatted-string.title');
+                        const qArtistEl = item.querySelector('.byline, .author, .subtitle, yt-formatted-string.byline');
+                        const qTitle = qTitleEl ? (qTitleEl.innerText || qTitleEl.textContent || '').trim() : '';
+                        const qArtist = qArtistEl ? (qArtistEl.innerText || qArtistEl.textContent || '').trim() : '';
+                        if (!qTitle) return;
+
+                        const dedupeKey = normStr(qTitle);
+                        if (!dedupeKey) return;
+
+                        const isCurrentActive = idx === activeDomIdx;
+                        if (seenMap.hasOwnProperty(dedupeKey)) {
+                            const existingIndex = seenMap[dedupeKey];
+                            if (isCurrentActive) {
+                                rawQueue[existingIndex].isSelected = true;
+                                rawQueue[existingIndex].originalIndex = idx;
+                                rawQueue[existingIndex].title = qTitle;
+                                if (qArtist) rawQueue[existingIndex].artist = qArtist;
+                            }
+                            return;
+                        }
+
+                        const queueIndex = rawQueue.length;
+                        seenMap[dedupeKey] = queueIndex;
+
+                        rawQueue.push({
+                            id: 'q_' + queueIndex + '_' + encodeURIComponent(qTitle),
+                            originalIndex: idx,
+                            title: qTitle,
+                            artist: qArtist,
+                            isSelected: isCurrentActive
+                        });
                     });
 
-                    if (isPersonalList && text && text.length > 0 && text.length < 60 && !seenPlaylists[listId] && !isSystem) {
-                        seenPlaylists[listId] = true;
-                        playlists.push({ id: listId, title: text, path: href });
+                    const selectedIdx = rawQueue.findIndex(i => i.isSelected);
+                    queue = rawQueue;
+                    if (selectedIdx > 10) {
+                        queue = rawQueue.slice(selectedIdx - 10);
                     }
-                });
 
-                var cardItems = document.querySelectorAll(
-                    'ytmusic-two-row-item-renderer, ytmusic-responsive-list-item-renderer'
-                );
+                    const ignoreTerms = [
+                        'главная', 'обзор', 'библиотека', 'настройки', 'подкасты', 'чарты',
+                        'home', 'explore', 'library', 'podcasts', 'charts', 'settings',
+                        'улучшить', 'upgrade', 'радио', 'radio', 'startseite', 'entdecken',
+                        'mediathek', 'inicio', 'explorar', 'biblioteca', 'boletim', 'esplora'
+                    ];
 
-                cardItems.forEach(function(item) {
-                    var link = item.querySelector('a[href*="list="]');
-                    if (!link) return;
+                    const isLibraryPlaylistsPage = window.location.href.includes('/library/playlists');
+                    const seenPlaylists = {};
 
-                    var href = link.getAttribute('href');
-                    if (!href) return;
+                    const guideEntries = document.querySelectorAll(
+                        'ytmusic-guide-section-renderer ytmusic-guide-entry-renderer a[href*="list="], ' +
+                        '#guide-content a[href*="list="], ' +
+                        '#sections a[href*="list="], ' +
+                        'tp-yt-paper-item a[href*="list="]'
+                    );
 
-                    var listMatch = href.match(/list=([a-zA-Z0-9_-]+)/);
-                    if (!listMatch) return;
+                    guideEntries.forEach(link => {
+                        const href = link.getAttribute('href');
+                        if (!href) return;
 
-                    var listId = listMatch[1];
-                    if (seenPlaylists[listId]) return;
+                        const listMatch = href.match(/list=([a-zA-Z0-9_-]+)/);
+                        if (!listMatch) return;
+                        const listId = listMatch[1];
 
-                    var isPersonalList =
-                        (href.includes('list=PL') || href.includes('list=LM') || href.includes('list=LL') || href.includes('list=FL')) &&
-                        !href.includes('list=RD') && !href.includes('list=OLAK') && !href.includes('watch?v=');
+                        const isPersonalList =
+                            (href.includes('list=PL') || href.includes('list=LM') || href.includes('list=LL') || href.includes('list=FL')) &&
+                            !href.includes('list=RD') && !href.includes('list=OLAK') && !href.includes('watch?v=');
 
-                    var badge = item.querySelector('ytmusic-inline-badge-renderer');
-                    var isPinned = badge
-                        ? ((badge.innerText && (badge.innerText.includes('Закріп') || badge.innerText.includes('Pinned') || badge.innerText.includes('Закреп') || badge.innerText.includes('Angepinnt') || badge.innerText.includes('Fijado'))) ||
-                           (badge.innerHTML && (badge.innerHTML.includes('Закріп') || badge.innerHTML.includes('Pinned') || badge.innerHTML.includes('Закреп') || badge.innerHTML.includes('Angepinnt') || badge.innerHTML.includes('Fijado'))))
-                        : false;
+                        let text = link.innerText ? link.innerText.trim() : '';
+                        if (text) text = text.split('\n')[0].trim();
+                        const lowerText = text.toLowerCase();
 
-                    var titleEl =
-                        item.querySelector('.title-group .title') ||
-                        item.querySelector('.title') ||
-                        item.querySelector('yt-formatted-string');
+                        const isSystem = ignoreTerms.some(term => lowerText === term || lowerText.includes('улучшить') || lowerText.includes('upgrade'));
 
-                    var text = titleEl ? (titleEl.innerText || titleEl.textContent || '').trim() : '';
-                    if (text) text = text.split('\n')[0].trim();
-
-                    var lowerText = text.toLowerCase();
-                    var isSystem = ignoreTerms.some(function(term) {
-                        return lowerText === term || lowerText.includes('улучшить') || lowerText.includes('upgrade');
+                        if (isPersonalList && text && text.length > 0 && text.length < 60 && !seenPlaylists[listId] && !isSystem) {
+                            seenPlaylists[listId] = true;
+                            playlists.push({ id: listId, title: text, path: href });
+                        }
                     });
 
-                    if (isPersonalList && (isPinned || isLibraryPlaylistsPage) && text && text.length > 0 && text.length < 60 && !isSystem) {
-                        seenPlaylists[listId] = true;
-                        playlists.push({ id: listId, title: text, path: href });
-                    }
-                });
-            }
+                    const cardItems = document.querySelectorAll('ytmusic-two-row-item-renderer, ytmusic-responsive-list-item-renderer');
 
-            var signInBtn =
-                document.querySelector('a[href*="ServiceLogin"]') ||
-                document.querySelector('ytmusic-sign-in-button-renderer') ||
-                document.querySelector('a[href*="accounts.google.com"]') ||
-                document.querySelector('.sign-in-link');
+                    cardItems.forEach(item => {
+                        const link = item.querySelector('a[href*="list="]');
+                        if (!link) return;
 
-            var avatarBtn =
-                document.querySelector('#avatar-btn') ||
-                document.querySelector('ytmusic-avatar-button') ||
-                document.querySelector('img#img[src*="googleusercontent"]') ||
-                document.querySelector('tp-yt-paper-icon-button#account-button');
+                        const href = link.getAttribute('href');
+                        if (!href) return;
 
-            var hasPlaylistsInDom = (playlists && playlists.length > 0) || (queue && queue.length > 0);
+                        const listMatch = href.match(/list=([a-zA-Z0-9_-]+)/);
+                        if (!listMatch) return;
+                        const listId = listMatch[1];
+                        if (seenPlaylists[listId]) return;
 
-            var isLoggedIn = true;
-            if (signInBtn !== null && !hasPlaylistsInDom && avatarBtn === null) {
-                isLoggedIn = false;
-            } else if (avatarBtn !== null || hasPlaylistsInDom) {
-                isLoggedIn = true;
-            } else {
-                isLoggedIn = (window.lastKnownLoggedIn !== undefined) ? window.lastKnownLoggedIn : true;
-            }
-            window.lastKnownLoggedIn = isLoggedIn;
+                        const isPersonalList =
+                            (href.includes('list=PL') || href.includes('list=LM') || href.includes('list=LL') || href.includes('list=FL')) &&
+                            !href.includes('list=RD') && !href.includes('list=OLAK') && !href.includes('watch?v=');
 
-            var payload = {
-                isLoggedIn: isLoggedIn,
-                isPlaying: isPlaying,
-                currentTime: currentTime,
-                duration: duration,
-                title: title,
-                artist: artist,
-                artworkUrl: artworkUrl,
-                isLiked: isLiked,
-                isDisliked: isDisliked,
-                repeatMode: repeatMode,
-                currentListId: currentListId
-            };
+                        const badge = item.querySelector('ytmusic-inline-badge-renderer, .badge');
+                        const isPinned = badge ? (
+                            (badge.innerText && (badge.innerText.includes('Закріп') || badge.innerText.includes('Pinned') || badge.innerText.includes('Закреп') || badge.innerText.includes('Angepinnt') || badge.innerText.includes('Fijado'))) ||
+                            (badge.innerHTML && (badge.innerHTML.includes('Закріп') || badge.innerHTML.includes('Pinned') || badge.innerHTML.includes('Закреп') || badge.innerHTML.includes('Angepinnt') || badge.innerHTML.includes('Fijado')))
+                        ) : false;
 
-            if (isFullSync) {
-                payload.queue = queue;
-                payload.playlists = playlists;
-            }
+                        const titleEl = item.querySelector('.title-group .title, .title, yt-formatted-string');
+                        let text = titleEl ? (titleEl.innerText || titleEl.textContent || '').trim() : '';
+                        if (text) text = text.split('\n')[0].trim();
+                        const lowerText = text.toLowerCase();
 
-            window.webkit.messageHandlers.ytmBridge.postMessage(payload);
-        } catch (error) {}
-    }
+                        const isSystem = ignoreTerms.some(term => lowerText === term || lowerText.includes('улучшить') || lowerText.includes('upgrade'));
 
-    setInterval(function() {
-        syncYTM(false);
-    }, 1800);
+                        if (isPersonalList && (isPinned || isLibraryPlaylistsPage) && text && text.length > 0 && text.length < 60 && !isSystem) {
+                            seenPlaylists[listId] = true;
+                            playlists.push({ id: listId, title: text, path: href });
+                        }
+                    });
+                }
+
+                const signInBtn = document.querySelector('a[href*="ServiceLogin"], ytmusic-sign-in-button-renderer, a[href*="accounts.google.com"], .sign-in-link');
+                const avatarBtn = document.querySelector('#avatar-btn, ytmusic-avatar-button, img#img[src*="googleusercontent"], tp-yt-paper-icon-button#account-button');
+                const hasPlaylistsInDom = (playlists && playlists.length > 0) || (queue && queue.length > 0);
+
+                let isLoggedIn = true;
+                if (signInBtn !== null && !hasPlaylistsInDom && avatarBtn === null) {
+                    isLoggedIn = false;
+                } else if (avatarBtn !== null || hasPlaylistsInDom) {
+                    isLoggedIn = true;
+                } else {
+                    isLoggedIn = (window.lastKnownLoggedIn !== undefined) ? window.lastKnownLoggedIn : true;
+                }
+                window.lastKnownLoggedIn = isLoggedIn;
+
+                const payload = {
+                    isLoggedIn: isLoggedIn,
+                    isPlaying: isPlaying,
+                    currentTime: currentTime,
+                    duration: duration,
+                    title: title,
+                    artist: artist,
+                    artworkUrl: artworkUrl,
+                    isLiked: isLiked,
+                    isDisliked: isDisliked,
+                    repeatMode: repeatMode,
+                    currentListId: currentListId
+                };
+
+                if (isFullSync) {
+                    payload.queue = queue;
+                    payload.playlists = playlists;
+                }
+
+                window.webkit.messageHandlers.ytmBridge.postMessage(payload);
+            } catch (error) {}
+        };
+
+        setInterval(() => window.syncYTM(false), 1800);
+    })();
     """#
 }

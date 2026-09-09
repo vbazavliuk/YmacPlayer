@@ -8,8 +8,8 @@ import ServiceManagement
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
-    private var statusItem: NSStatusItem!
-    private var popover: NSPopover!
+    private var statusItem: NSStatusItem?
+    private var popover: NSPopover?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupPopover()
@@ -35,11 +35,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Sets up the system status bar item and mouse click listeners.
     private func setupStatusItem() {
-        statusItem = NSStatusBar.system.statusItem(
+        let item = NSStatusBar.system.statusItem(
             withLength: NSStatusItem.squareLength
         )
+        self.statusItem = item
 
-        guard let button = statusItem.button else {
+        guard let button = item.button else {
             return
         }
 
@@ -68,7 +69,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func togglePopover() {
-        guard let button = statusItem.button else {
+        guard let statusItem = statusItem, let button = statusItem.button, let popover = popover else {
             return
         }
 
@@ -130,7 +131,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             item.target = self
             item.representedObject = language
-            item.state = language == currentLanguage ? .on : .off
+            item.state = (language == currentLanguage) ? NSControl.StateValue.on : NSControl.StateValue.off
 
             submenu.addItem(item)
         }
@@ -164,8 +165,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         favoritePlaylistsItem.target = self
-        favoritePlaylistsItem.state =
-            controller.libraryFilter == .favoritePlaylists ? .on : .off
+        favoritePlaylistsItem.state = (controller.libraryFilter == .favoritePlaylists) ? NSControl.StateValue.on : NSControl.StateValue.off
 
         submenu.addItem(favoritePlaylistsItem)
 
@@ -176,8 +176,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         playlistsItem.target = self
-        playlistsItem.state =
-            controller.libraryFilter == .playlists ? .on : .off
+        playlistsItem.state = (controller.libraryFilter == .playlists) ? NSControl.StateValue.on : NSControl.StateValue.off
 
         submenu.addItem(playlistsItem)
 
@@ -214,7 +213,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.target = self
 
         if #available(macOS 13.0, *) {
-            item.state = SMAppService.mainApp.status == .enabled ? .on : .off
+            item.state = (SMAppService.mainApp.status == .enabled) ? NSControl.StateValue.on : NSControl.StateValue.off
         }
 
         menu.addItem(item)

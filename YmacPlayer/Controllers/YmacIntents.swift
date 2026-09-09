@@ -4,9 +4,6 @@ import CoreFoundation
 
 // MARK: - Helper Functions
 
-/// Checks if the app is in a valid state to execute playback commands from widget intents.
-/// Marked `nonisolated` to opt out of the project's default main-actor isolation, since
-/// `AppIntent.perform()` is not guaranteed to run on the main actor.
 nonisolated private func canExecuteCommand() -> Bool {
     guard let defaults = UserDefaults(suiteName: "group.com.ymacplayer") else { return true }
     let isLoggedIn = defaults.object(forKey: "widgetIsLoggedIn") != nil ? defaults.bool(forKey: "widgetIsLoggedIn") : true
@@ -16,7 +13,6 @@ nonisolated private func canExecuteCommand() -> Bool {
 
 // MARK: - Playback Control Intents
 
-/// App Intent for toggling playback (Play / Pause).
 struct TogglePlayIntent: AppIntent {
     static var title: LocalizedStringResource = "Play / Pause"
 
@@ -28,7 +24,6 @@ struct TogglePlayIntent: AppIntent {
     }
 }
 
-/// App Intent for skipping to the next track.
 struct NextTrackIntent: AppIntent {
     static var title: LocalizedStringResource = "Next Track"
 
@@ -40,7 +35,6 @@ struct NextTrackIntent: AppIntent {
     }
 }
 
-/// App Intent for returning to the previous track.
 struct PreviousTrackIntent: AppIntent {
     static var title: LocalizedStringResource = "Previous Track"
 
@@ -52,7 +46,6 @@ struct PreviousTrackIntent: AppIntent {
     }
 }
 
-/// App Intent for toggling shuffle mode.
 struct ToggleShuffleIntent: AppIntent {
     static var title: LocalizedStringResource = "Shuffle"
 
@@ -64,7 +57,6 @@ struct ToggleShuffleIntent: AppIntent {
     }
 }
 
-/// App Intent for toggling repeat mode.
 struct ToggleRepeatIntent: AppIntent {
     static var title: LocalizedStringResource = "Repeat"
 
@@ -78,7 +70,6 @@ struct ToggleRepeatIntent: AppIntent {
 
 // MARK: - Playlist Management Intents
 
-/// App Intent for selecting a playlist via ID.
 struct SelectPlaylistIntent: AppIntent {
     static var title: LocalizedStringResource = "Select Playlist"
 
@@ -92,14 +83,16 @@ struct SelectPlaylistIntent: AppIntent {
     }
 
     func perform() async throws -> some IntentResult {
+        let cleanID = playlistID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanID.isEmpty else { return .result() }
+
         let defaults = UserDefaults(suiteName: "group.com.ymacplayer")
-        defaults?.set(playlistID, forKey: "pendingSelectedPlaylistID")
+        defaults?.set(cleanID, forKey: "pendingSelectedPlaylistID")
         postDarwinNotification("com.ymacplayer.selectPlaylist")
         return .result()
     }
 }
 
-/// App Intent for resetting the active playlist selection.
 struct ResetPlaylistIntent: AppIntent {
     static var title: LocalizedStringResource = "Reset Playlist Selection"
 
@@ -111,8 +104,6 @@ struct ResetPlaylistIntent: AppIntent {
 
 // MARK: - Inter-Process Communication
 
-/// Posts a Darwin system notification to trigger player actions across app targets.
-/// Marked `nonisolated` for the same reason as `canExecuteCommand()` above.
 nonisolated private func postDarwinNotification(_ name: String) {
     let notificationName = name as CFString
     CFNotificationCenterPostNotification(

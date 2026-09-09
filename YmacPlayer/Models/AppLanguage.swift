@@ -2,8 +2,7 @@ import Foundation
 
 // MARK: - Supported App Languages
 
-/// Represents the list of supported application languages for Ymac Player.
-enum AppLanguage: String, CaseIterable, Identifiable {
+public enum AppLanguage: String, CaseIterable, Identifiable, Codable, Sendable {
     case english = "en"
     case german = "de"
     case russian = "ru"
@@ -15,11 +14,9 @@ enum AppLanguage: String, CaseIterable, Identifiable {
     case romanian = "ro"
     case polish = "pl"
 
-    /// The unique identifier corresponding to the language code.
-    var id: String { rawValue }
+    public var id: String { rawValue }
 
-    /// The localized display name of the language in its native form.
-    var title: String {
+    public var title: String {
         switch self {
         case .english: return "English"
         case .german: return "Deutsch"
@@ -37,10 +34,9 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 
 // MARK: - Localized Strings Helper
 
-/// Provides localized string resources across all supported languages for Ymac Player.
-struct LocalizedStrings {
-    
-    static func pleaseSignIn(_ lang: AppLanguage) -> String {
+public struct LocalizedStrings {
+
+    public static func pleaseSignIn(_ lang: AppLanguage) -> String {
         switch lang {
         case .english: return "Please sign in"
         case .german: return "Bitte anmelden"
@@ -54,8 +50,8 @@ struct LocalizedStrings {
         case .polish: return "Zaloguj się"
         }
     }
-    
-    static func selectPlaylist(_ lang: AppLanguage) -> String {
+
+    public static func selectPlaylist(_ lang: AppLanguage) -> String {
         switch lang {
         case .english: return "Select playlist..."
         case .german: return "Wähle Playlist..."
@@ -69,8 +65,8 @@ struct LocalizedStrings {
         case .polish: return "Wybierz playlistę..."
         }
     }
-    
-    static func loadingPlaylists(_ lang: AppLanguage) -> String {
+
+    public static func loadingPlaylists(_ lang: AppLanguage) -> String {
         switch lang {
         case .english: return "Loading..."
         case .german: return "Laden..."
@@ -84,8 +80,8 @@ struct LocalizedStrings {
         case .polish: return "Ładowanie..."
         }
     }
-    
-    static func selectPlaylistPrompt(_ lang: AppLanguage) -> String {
+
+    public static func selectPlaylistPrompt(_ lang: AppLanguage) -> String {
         switch lang {
         case .english: return "Select playlist above"
         case .german: return "Wähle oben eine Playlist"
@@ -99,8 +95,8 @@ struct LocalizedStrings {
         case .polish: return "Wybierz playlistę powyżej"
         }
     }
-    
-    static func toggleViewHelp(_ lang: AppLanguage, showFull: Bool) -> String {
+
+    public static func toggleViewHelp(_ lang: AppLanguage, showFull: Bool) -> String {
         if showFull {
             switch lang {
             case .english: return "Collapse player"
@@ -129,8 +125,8 @@ struct LocalizedStrings {
             }
         }
     }
-    
-    static func languageMenuTitle(_ lang: AppLanguage) -> String {
+
+    public static func languageMenuTitle(_ lang: AppLanguage) -> String {
         switch lang {
         case .english: return "Language"
         case .german: return "Sprache"
@@ -144,8 +140,8 @@ struct LocalizedStrings {
         case .polish: return "Język"
         }
     }
-    
-    static func libraryMenuTitle(_ lang: AppLanguage) -> String {
+
+    public static func libraryMenuTitle(_ lang: AppLanguage) -> String {
         switch lang {
         case .english: return "My Library"
         case .german: return "Meine Bibliothek"
@@ -159,8 +155,8 @@ struct LocalizedStrings {
         case .polish: return "Moja biblioteka"
         }
     }
-    
-    static func favoritePlaylistsCategoryTitle(_ lang: AppLanguage) -> String {
+
+    public static func favoritePlaylistsCategoryTitle(_ lang: AppLanguage) -> String {
         switch lang {
         case .english: return "My Favorite Playlists"
         case .german: return "Meine Lieblings-Playlists"
@@ -174,8 +170,8 @@ struct LocalizedStrings {
         case .polish: return "Moje ulubione playlisty"
         }
     }
-    
-    static func playlistsCategoryTitle(_ lang: AppLanguage) -> String {
+
+    public static func playlistsCategoryTitle(_ lang: AppLanguage) -> String {
         switch lang {
         case .english: return "Playlists"
         case .german: return "Playlists"
@@ -189,8 +185,8 @@ struct LocalizedStrings {
         case .polish: return "Playlisty"
         }
     }
-    
-    static func autostartMenuTitle(_ lang: AppLanguage) -> String {
+
+    public static func autostartMenuTitle(_ lang: AppLanguage) -> String {
         switch lang {
         case .english: return "Launch at Login"
         case .german: return "Bei Anmeldung starten"
@@ -204,8 +200,8 @@ struct LocalizedStrings {
         case .polish: return "Uruchamiaj przy logowaniu"
         }
     }
-    
-    static func aboutMenuTitle(_ lang: AppLanguage) -> String {
+
+    public static func aboutMenuTitle(_ lang: AppLanguage) -> String {
         switch lang {
         case .english: return "About Ymac Player"
         case .german: return "Über Ymac Player"
@@ -219,13 +215,13 @@ struct LocalizedStrings {
         case .polish: return "O Ymac Player"
         }
     }
-    
-    static func quitApp(_ lang: AppLanguage) -> String {
+
+    public static func quitApp(_ lang: AppLanguage) -> String {
         switch lang {
         case .english: return "Quit App"
         case .german: return "App beenden"
         case .russian: return "Завершить программу"
-        case .ukrainian: return "Завершити программу"
+        case .ukrainian: return "Завершити програму"
         case .spanish: return "Salir de la aplicación"
         case .portuguese: return "Sair do aplicativo"
         case .italian: return "Esci dall'applicazione"
@@ -234,8 +230,8 @@ struct LocalizedStrings {
         case .polish: return "Zamknij aplikację"
         }
     }
-    
-    static func upNext(_ lang: AppLanguage) -> String {
+
+    public static func upNext(_ lang: AppLanguage) -> String {
         switch lang {
         case .english: return "Up Next"
         case .german: return "Nächste Titel"
@@ -249,8 +245,8 @@ struct LocalizedStrings {
         case .polish: return "Następne"
         }
     }
-    
-    static func emptyQueue(_ lang: AppLanguage) -> String {
+
+    public static func emptyQueue(_ lang: AppLanguage) -> String {
         switch lang {
         case .english: return "Queue is empty"
         case .german: return "Warteschlange leer"
@@ -265,7 +261,7 @@ struct LocalizedStrings {
         }
     }
 
-    static func playing(_ lang: AppLanguage) -> String {
+    public static func playing(_ lang: AppLanguage) -> String {
         switch lang {
         case .english: return "Playing"
         case .german: return "Wiedergabe"
@@ -280,7 +276,7 @@ struct LocalizedStrings {
         }
     }
 
-    static func paused(_ lang: AppLanguage) -> String {
+    public static func paused(_ lang: AppLanguage) -> String {
         switch lang {
         case .english: return "Paused"
         case .german: return "Pausiert"
