@@ -393,6 +393,9 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
             }
 
             if let playing = dictionary["isPlaying"] as? Bool {
+                if playing {
+                    self.userWantsPlayback = true
+                }
                 let effectivePlaying = playing && self.userWantsPlayback
                 if self.isPlaying != effectivePlaying {
                     self.isPlaying = effectivePlaying
@@ -464,6 +467,7 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
         defaults.set(isLoggedIn, forKey: "widgetIsLoggedIn")
         defaults.set(isWidgetActive, forKey: "widgetHasSelectedPlaylist")
         defaults.set(currentLanguage.rawValue, forKey: "widgetLanguage")
+        defaults.set(true, forKey: "widgetIsAppRunning")
 
         let playlistDicts = userPlaylists.map { ["id": $0.id, "title": $0.title, "path": $0.path] }
         defaults.set(playlistDicts, forKey: "widgetPlaylists")
@@ -785,14 +789,13 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
             if (v) {
                 v.muted = false;
                 v.play().catch(function() {});
-            } else {
-                var playBtn = document.querySelector('#play-pause-button') || document.querySelector('.play-pause-button');
-                if (playBtn) playBtn.click();
             }
+            var playBtn = document.querySelector('#play-pause-button') || document.querySelector('.play-pause-button');
+            if (playBtn) playBtn.click();
         }
         """)
         updateNowPlayingInfo()
-        updateWidgetDataIfNeeded()
+        updateWidgetDataIfNeeded(forceReload: true)
     }
 
     func pause() {
@@ -807,14 +810,13 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
             if (v) {
                 v.pause();
                 v.muted = true;
-            } else {
-                var playBtn = document.querySelector('#play-pause-button') || document.querySelector('.play-pause-button');
-                if (playBtn) playBtn.click();
             }
+            var playBtn = document.querySelector('#play-pause-button') || document.querySelector('.play-pause-button');
+            if (playBtn) playBtn.click();
         }
         """)
         updateNowPlayingInfo()
-        updateWidgetDataIfNeeded()
+        updateWidgetDataIfNeeded(forceReload: true)
     }
 
     func togglePlay() {
@@ -826,29 +828,29 @@ final class YTMController: NSObject, ObservableObject, WKScriptMessageHandler, W
     }
 
     func nextTrack() {
-        if isPlaying {
-            userWantsPlayback = true
-        }
+        userWantsPlayback = true
+        isPlaying = true
         runJS("""
-        if (window.userWantsPlayback) {
-            var v = document.querySelector('video');
-            if (v) v.muted = false;
-        }
+        window.userWantsPlayback = true;
+        var v = document.querySelector('video');
+        if (v) v.muted = false;
         document.querySelector('.next-button, [aria-label*="Next"]')?.click();
         """)
+        updateNowPlayingInfo()
+        updateWidgetDataIfNeeded(forceReload: true)
     }
 
     func previousTrack() {
-        if isPlaying {
-            userWantsPlayback = true
-        }
+        userWantsPlayback = true
+        isPlaying = true
         runJS("""
-        if (window.userWantsPlayback) {
-            var v = document.querySelector('video');
-            if (v) v.muted = false;
-        }
+        window.userWantsPlayback = true;
+        var v = document.querySelector('video');
+        if (v) v.muted = false;
         document.querySelector('.previous-button, [aria-label*="Previous"]')?.click();
         """)
+        updateNowPlayingInfo()
+        updateWidgetDataIfNeeded(forceReload: true)
     }
 
     func playQueueItem(at originalIndex: Int) {

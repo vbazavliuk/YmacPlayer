@@ -27,6 +27,7 @@ struct SimpleEntry: TimelineEntry {
     let hasSelectedPlaylist: Bool
     let language: AppLanguage
     let playlists: [WidgetPlaylistItem]
+    let isAppRunning: Bool
 }
 
 // MARK: - Shared Widget Time Formatting
@@ -85,7 +86,8 @@ struct Provider: TimelineProvider {
                 WidgetPlaylistItem(id: "2", title: "Favorites"),
                 WidgetPlaylistItem(id: "3", title: "Chill Hits"),
                 WidgetPlaylistItem(id: "4", title: "Workout")
-            ]
+            ],
+            isAppRunning: true
         )
     }
 
@@ -115,12 +117,15 @@ struct Provider: TimelineProvider {
                 isLoggedIn: true,
                 hasSelectedPlaylist: false,
                 language: .english,
-                playlists: []
+                playlists: [],
+                isAppRunning: false
             )
         }
 
+        let isAppRunning = defaults.bool(forKey: "widgetIsAppRunning")
+
         var artworkImage: NSImage? = nil
-        if let containerURL = FileManager.default.containerURL(
+        if isAppRunning, let containerURL = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: "group.com.ymacplayer"
         ) {
             let fileURL = containerURL.appendingPathComponent("artwork.png")
@@ -130,25 +135,25 @@ struct Provider: TimelineProvider {
         }
 
         let rawTitle = defaults.string(forKey: "widgetTitle") ?? "Ymac Player"
-        let title = (rawTitle == "YouTube Music" || rawTitle == "U-Music") ? "Ymac Player" : rawTitle
+        let title = (rawTitle == "YouTube Music" || rawTitle == "U-Music" || !isAppRunning) ? "Ymac Player" : rawTitle
 
-        let artist = defaults.string(forKey: "widgetArtist") ?? ""
-        let isPlaying = defaults.bool(forKey: "widgetIsPlaying")
-        let currentTime = defaults.double(forKey: "widgetCurrentTime")
-        let duration = defaults.double(forKey: "widgetDuration")
-        let isShuffle = defaults.bool(forKey: "widgetIsShuffle")
-        let repeatMode = defaults.integer(forKey: "widgetRepeatMode")
+        let artist = isAppRunning ? (defaults.string(forKey: "widgetArtist") ?? "") : ""
+        let isPlaying = isAppRunning ? defaults.bool(forKey: "widgetIsPlaying") : false
+        let currentTime = isAppRunning ? defaults.double(forKey: "widgetCurrentTime") : 0.0
+        let duration = isAppRunning ? defaults.double(forKey: "widgetDuration") : 0.0
+        let isShuffle = isAppRunning ? defaults.bool(forKey: "widgetIsShuffle") : false
+        let repeatMode = isAppRunning ? defaults.integer(forKey: "widgetRepeatMode") : 0
         let isLoggedIn = defaults.object(forKey: "widgetIsLoggedIn") != nil ? defaults.bool(forKey: "widgetIsLoggedIn") : true
         
         let storedHasSelectedPlaylist = defaults.bool(forKey: "widgetHasSelectedPlaylist")
-        let hasActiveTrack = !title.isEmpty && title != "Ymac Player" && title != "Ymac"
-        let effectiveHasPlaylist = storedHasSelectedPlaylist || hasActiveTrack
+        let hasActiveTrack = isAppRunning && !title.isEmpty && title != "Ymac Player" && title != "Ymac"
+        let effectiveHasPlaylist = isAppRunning && (storedHasSelectedPlaylist || hasActiveTrack)
 
         let langRaw = defaults.string(forKey: "widgetLanguage") ?? "en"
         let language = AppLanguage(rawValue: langRaw) ?? .english
 
         var playlistsArray: [WidgetPlaylistItem] = []
-        if let rawList = defaults.array(forKey: "widgetPlaylists") as? [[String: String]] {
+        if isAppRunning, let rawList = defaults.array(forKey: "widgetPlaylists") as? [[String: String]] {
             playlistsArray = rawList.compactMap { dict in
                 guard let id = dict["id"], let t = dict["title"] else { return nil }
                 return WidgetPlaylistItem(id: id, title: t)
@@ -168,7 +173,8 @@ struct Provider: TimelineProvider {
             isLoggedIn: isLoggedIn,
             hasSelectedPlaylist: effectiveHasPlaylist,
             language: language,
-            playlists: playlistsArray
+            playlists: playlistsArray,
+            isAppRunning: isAppRunning
         )
     }
 }
@@ -195,9 +201,80 @@ struct YmacPlayerWidgetEntryView: View {
 struct SmallWidgetView: View, WidgetTimeFormatting {
     let entry: SimpleEntry
 
+    private var appNotRunningView: some View {
+        VStack(spacing: 8) {
+            Spacer(minLength: 0)
+
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.red.opacity(0.25), Color.orange.opacity(0.15)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 44, height: 44)
+
+                Image(systemName: "music.note")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.red, Color.orange],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+
+            VStack(spacing: 2) {
+                Text("Ymac Player")
+                    .font(.system(size: 11.5, weight: .bold))
+                    .foregroundColor(.white)
+
+                Text(LocalizedStrings.appNotRunning(entry.language))
+                    .font(.system(size: 9))
+                    .foregroundColor(.white.opacity(0.65))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+            }
+
+            Spacer(minLength: 0)
+
+            Button(intent: LaunchAppIntent()) {
+                HStack(spacing: 4) {
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 11, weight: .bold))
+                    Text(LocalizedStrings.launchPlayer(entry.language))
+                        .font(.system(size: 10, weight: .semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 5)
+                .padding(.horizontal, 6)
+                .background(
+                    LinearGradient(
+                        colors: [Color.red, Color.red.opacity(0.8)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .cornerRadius(6)
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(2)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            if !entry.isLoggedIn {
+            if !entry.isAppRunning {
+                appNotRunningView
+            } else if !entry.isLoggedIn {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(LocalizedStrings.pleaseSignIn(entry.language))
                         .font(.system(size: 12, weight: .bold))
@@ -274,9 +351,10 @@ struct SmallWidgetView: View, WidgetTimeFormatting {
                             Image(systemName: "music.note.list")
                                 .font(.system(size: 9.5, weight: .bold))
                                 .foregroundColor(.white.opacity(0.85))
-                                .padding(3)
+                                .frame(width: 22, height: 22)
                                 .background(Color.black.opacity(0.45))
                                 .clipShape(Circle())
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                     }
@@ -342,9 +420,9 @@ struct SmallWidgetView: View, WidgetTimeFormatting {
                     Spacer()
                     Button(intent: TogglePlayIntent()) {
                         Image(systemName: entry.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                            .font(.system(size: 18))
+                            .font(.system(size: 19))
                             .foregroundColor(.white)
-                            .frame(width: 22, height: 20)
+                            .frame(width: 26, height: 22)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -375,7 +453,7 @@ struct SmallWidgetView: View, WidgetTimeFormatting {
         .padding(6)
         .containerBackground(for: .widget) {
             ZStack {
-                if entry.hasSelectedPlaylist, let nsImage = entry.artworkImage {
+                if entry.isAppRunning && entry.hasSelectedPlaylist, let nsImage = entry.artworkImage {
                     Image(nsImage: nsImage)
                         .resizable()
                         .scaledToFill()
@@ -408,9 +486,76 @@ struct MediumWidgetView: View, WidgetTimeFormatting {
         }
     }
 
+    private var appNotRunningView: some View {
+        HStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.red.opacity(0.25), Color.orange.opacity(0.15)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 56, height: 56)
+
+                Image(systemName: "music.note")
+                    .font(.system(size: 26, weight: .bold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.red, Color.orange],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Ymac Player")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.white)
+
+                    Text(LocalizedStrings.appNotRunning(entry.language))
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.65))
+                        .lineLimit(1)
+                }
+
+                Button(intent: LaunchAppIntent()) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "play.circle.fill")
+                            .font(.system(size: 13, weight: .bold))
+                        Text(LocalizedStrings.launchPlayer(entry.language))
+                            .font(.system(size: 11.5, weight: .semibold))
+                            .lineLimit(1)
+                    }
+                    .foregroundColor(.white)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 12)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.red, Color.red.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .cornerRadius(7)
+                }
+                .buttonStyle(.plain)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 8)
+    }
+
     var body: some View {
         VStack(spacing: 6) {
-            if !entry.isLoggedIn {
+            if !entry.isAppRunning {
+                appNotRunningView
+            } else if !entry.isLoggedIn {
                 HStack {
                     Text(LocalizedStrings.pleaseSignIn(entry.language))
                         .font(.system(size: 14, weight: .bold))
@@ -491,9 +636,10 @@ struct MediumWidgetView: View, WidgetTimeFormatting {
                         Image(systemName: "music.note.list")
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(.white.opacity(0.85))
-                            .padding(5)
+                            .frame(width: 26, height: 26)
                             .background(Color.white.opacity(0.18))
                             .clipShape(Circle())
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
@@ -556,7 +702,7 @@ struct MediumWidgetView: View, WidgetTimeFormatting {
                         Image(systemName: entry.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                             .font(.system(size: 28))
                             .foregroundColor(.white)
-                            .frame(width: 36, height: 32)
+                            .frame(width: 40, height: 34)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -587,7 +733,7 @@ struct MediumWidgetView: View, WidgetTimeFormatting {
         .padding(12)
         .containerBackground(for: .widget) {
             ZStack {
-                if entry.hasSelectedPlaylist, let nsImage = entry.artworkImage {
+                if entry.isAppRunning && entry.hasSelectedPlaylist, let nsImage = entry.artworkImage {
                     Image(nsImage: nsImage)
                         .resizable()
                         .scaledToFill()

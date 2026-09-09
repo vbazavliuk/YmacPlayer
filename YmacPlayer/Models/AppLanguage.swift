@@ -290,4 +290,34 @@ public struct LocalizedStrings {
         case .polish: return "Wstrzymano"
         }
     }
+
+    public static func launchPlayer(_ lang: AppLanguage) -> String {
+        switch lang {
+        case .english: return "Launch Player"
+        case .german: return "Player starten"
+        case .russian: return "Запустить плеер"
+        case .ukrainian: return "Запустити плеєр"
+        case .spanish: return "Iniciar reproductor"
+        case .portuguese: return "Iniciar player"
+        case .italian: return "Avvia player"
+        case .french: return "Lancer le lecteur"
+        case .romanian: return "Pornește playerul"
+        case .polish: return "Uruchom odtwarzacz"
+        }
+    }
+
+    public static func appNotRunning(_ lang: AppLanguage) -> String {
+        switch lang {
+        case .english: return "Player is not running"
+        case .german: return "Player läuft nicht"
+        case .russian: return "Плеер закрыт"
+        case .ukrainian: return "Плеєр закрито"
+        case .spanish: return "El reproductor no se está ejecutando"
+        case .portuguese: return "O player não está em execução"
+        case .italian: return "Il player non è in esecuzione"
+        case .french: return "Le lecteur n'est pas lancé"
+        case .romanian: return "Playerul nu rulează"
+        case .polish: return "Odtwarzacz jest wyłączony"
+        }
+    }
 }

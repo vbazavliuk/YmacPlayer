@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import ServiceManagement
+import WidgetKit
 
 // MARK: - Menu Bar Delegate
 
@@ -12,8 +13,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var popover: NSPopover?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        let defaults = UserDefaults(suiteName: "group.com.ymacplayer")
+        defaults?.set(true, forKey: "widgetIsAppRunning")
+        defaults?.synchronize()
+        WidgetCenter.shared.reloadAllTimelines()
+
         setupPopover()
         setupStatusItem()
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        if let defaults = UserDefaults(suiteName: "group.com.ymacplayer") {
+            defaults.set(false, forKey: "widgetIsAppRunning")
+            defaults.set(false, forKey: "widgetIsPlaying")
+            defaults.set("", forKey: "widgetTitle")
+            defaults.set("", forKey: "widgetArtist")
+            defaults.set(0.0, forKey: "widgetCurrentTime")
+            defaults.set(0.0, forKey: "widgetDuration")
+            defaults.synchronize()
+        }
+
+        if let containerURL = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: "group.com.ymacplayer"
+        ) {
+            let fileURL = containerURL.appendingPathComponent("artwork.png")
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     // MARK: - Setup

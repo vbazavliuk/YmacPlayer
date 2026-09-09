@@ -18,17 +18,24 @@ enum YTMJavaScript {
         window.setPlaybackIntent = function(wantsPlayback) {
             window.userWantsPlayback = !!wantsPlayback;
             const v = document.querySelector('video');
+            const playBtn = document.querySelector('#play-pause-button, .play-pause-button');
             if (v) {
                 if (!window.userWantsPlayback || window.isSystemSleeping) {
                     v.pause();
                     v.muted = true;
                 } else {
                     v.muted = false;
-                    v.play().catch(function() {});
+                    v.play().catch(function() {
+                        if (playBtn) playBtn.click();
+                    });
                 }
+            } else if (playBtn) {
+                playBtn.click();
             }
             if (typeof window.syncYTM === 'function') {
                 window.syncYTM(true);
+                setTimeout(() => { if (typeof window.syncYTM === 'function') window.syncYTM(true); }, 100);
+                setTimeout(() => { if (typeof window.syncYTM === 'function') window.syncYTM(true); }, 300);
             }
         };
 
@@ -133,7 +140,7 @@ enum YTMJavaScript {
                     }
                 }
 
-                const isPlaying = video ? (!video.paused && video.currentTime > 0 && video.readyState > 2 && !!window.userWantsPlayback && !window.isSystemSleeping) : false;
+                const isPlaying = video ? (!video.paused && !video.ended && video.readyState > 1 && !!window.userWantsPlayback && !window.isSystemSleeping) : false;
                 const currentTime = (video && !isNaN(video.currentTime)) ? video.currentTime : 0;
                 const duration = (video && !isNaN(video.duration) && isFinite(video.duration)) ? video.duration : 0;
 
