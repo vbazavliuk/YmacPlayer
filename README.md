@@ -9,8 +9,8 @@
 [![Swift Version](https://img.shields.io/badge/Swift-5.9%20%7C%206.0-F05138.svg?style=flat-square&logo=swift&logoColor=white)](https://swift.org)
 [![Xcode Version](https://img.shields.io/badge/Xcode-26.0%2B-1575F9.svg?style=flat-square&logo=xcode&logoColor=white)](https://developer.apple.com/xcode)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-[![Latest Release](https://img.shields.io/badge/Release-v1.0.0-E50914.svg?style=flat-square&logo=github)](https://github.com/vbazavluk/YmacPlayer/releases)
-[![Platform](https://img.shields.io/badge/Platform-Apple%20Silicon%20%7C%20Intel-blue.svg?style=flat-square)](https://github.com/vbazavluk/YmacPlayer)
+[![Latest Release](https://img.shields.io/badge/Release-v1.0.0-E50914.svg?style=flat-square&logo=github)](https://github.com/vbazavliuk/YmacPlayer/releases)
+[![Platform](https://img.shields.io/badge/Platform-Apple%20Silicon%20%7C%20Intel-blue.svg?style=flat-square)](https://github.com/vbazavliuk/YmacPlayer)
 
 <p align="center">
   <a href="#-key-features">Key Features</a> •
@@ -114,7 +114,7 @@ Right-click the menu bar icon to change the language instantly, navigate library
 > 3. Click **Open** in the dialog. macOS will remember your approval and will never ask again.
 
 ### Steps to Install:
-1. Download **`YmacPlayer-1.0.0.dmg`** (or `YmacPlayer-1.0.0.zip`) from [Releases](https://github.com/vbazavluk/YmacPlayer/releases).
+1. Download **`YmacPlayer-1.0.0.dmg`** (or `YmacPlayer-1.0.0.zip`) from [Releases](https://github.com/vbazavliuk/YmacPlayer/releases).
 2. Open the `.dmg` and drag **Ymac Player.app** into `/Applications`.
 3. Run `xattr -cr /Applications/YmacPlayer.app` (or Right-click > Open).
 4. Click the music note icon in your menu bar, click **Login**, and sign into YouTube Music!
@@ -146,7 +146,7 @@ To add Ymac Player widgets to your macOS 26+ desktop or Notification Center:
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/vbazavluk/YmacPlayer.git
+git clone https://github.com/vbazavliuk/YmacPlayer.git
 cd YmacPlayer
 ```
 
