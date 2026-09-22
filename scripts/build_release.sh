@@ -45,7 +45,7 @@ SCHEME="YmacPlayer"
 PROJECT="YmacPlayer.xcodeproj"
 CONFIGURATION="${CONFIGURATION:-Release}"
 OUTPUT_DIR="${OUTPUT_DIR:-dist}"
-DERIVED_DATA_PATH="build/DerivedData"
+DERIVED_DATA_PATH="/tmp/YmacPlayer-DerivedData"
 VERSION="${VERSION:-1.0.0}"
 
 echo -e "Scheme:        ${BOLD}${SCHEME}${NC}"
@@ -61,20 +61,17 @@ mkdir -p "build"
 # 4. Build Release
 echo -e "${BLUE}🔨 Building ${SCHEME} (${CONFIGURATION})...${NC}"
 
-# Allow building with ad-hoc signing or explicit developer team
 BUILD_SIGNING_FLAGS=()
-if [ -n "${DEVELOPMENT_TEAM:-}" ]; then
+if [ "${SIGN_ADHOC:-0}" = "1" ]; then
+    echo -e "${YELLOW}Notice: Building with ad-hoc signature for CI/distribution without developer certs.${NC}"
+    BUILD_SIGNING_FLAGS=(
+        "CODE_SIGN_IDENTITY=-"
+        "CODE_SIGN_STYLE=Manual"
+    )
+elif [ -n "${DEVELOPMENT_TEAM:-}" ]; then
     echo -e "Using Development Team: ${GREEN}${DEVELOPMENT_TEAM}${NC}"
     BUILD_SIGNING_FLAGS=(
         "DEVELOPMENT_TEAM=${DEVELOPMENT_TEAM}"
-        "-allowProvisioningUpdates"
-    )
-else
-    echo -e "${YELLOW}Notice: DEVELOPMENT_TEAM not set; building without profile and applying ad-hoc signature.${NC}"
-    BUILD_SIGNING_FLAGS=(
-        "CODE_SIGNING_ALLOWED=NO"
-        "CODE_SIGNING_REQUIRED=NO"
-        "CODE_SIGN_IDENTITY="
     )
 fi
 
@@ -84,7 +81,7 @@ if command -v xcbeautify &>/dev/null; then
         -scheme "$SCHEME" \
         -configuration "$CONFIGURATION" \
         -derivedDataPath "$DERIVED_DATA_PATH" \
-        "${BUILD_SIGNING_FLAGS[@]}" \
+        ${BUILD_SIGNING_FLAGS[@]+"${BUILD_SIGNING_FLAGS[@]}"} \
         clean build | xcbeautify
 else
     xcodebuild \
@@ -92,7 +89,7 @@ else
         -scheme "$SCHEME" \
         -configuration "$CONFIGURATION" \
         -derivedDataPath "$DERIVED_DATA_PATH" \
-        "${BUILD_SIGNING_FLAGS[@]}" \
+        ${BUILD_SIGNING_FLAGS[@]+"${BUILD_SIGNING_FLAGS[@]}"} \
         clean build -quiet
 fi
 
@@ -111,10 +108,17 @@ fi
 
 echo -e "${GREEN}✓ Build succeeded:${NC} ${APP_PATH}"
 
-# Apply ad-hoc code signature if built without team
-if [ -z "${DEVELOPMENT_TEAM:-}" ]; then
-    echo -e "${BLUE}🔏 Applying ad-hoc code signature...${NC}"
-    codesign --force --deep --sign - "$APP_PATH" 2>/dev/null || true
+# Remove any extended attributes (iCloud/FinderInfo) that trigger Gatekeeper rejection
+xattr -rc "$APP_PATH" 2>/dev/null || true
+
+# If built with ad-hoc signing, ensure entitlements are applied properly
+if [ "${SIGN_ADHOC:-0}" = "1" ]; then
+    echo -e "${BLUE}🔏 Applying clean ad-hoc signature with entitlements...${NC}"
+    WIDGET_PATH="$APP_PATH/Contents/PlugIns/YmacPlayerWidgetExtension.appex"
+    if [ -d "$WIDGET_PATH" ]; then
+        codesign --force --sign - --entitlements YmacPlayerWidgetExtension.entitlements "$WIDGET_PATH"
+    fi
+    codesign --force --sign - --entitlements YmacPlayer/YmacPlayer.entitlements "$APP_PATH"
 fi
 
 # 5. Create ZIP Archive
