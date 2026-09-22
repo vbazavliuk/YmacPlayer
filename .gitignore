@@ -1,7 +1,17 @@
-# macOS
+# ==============================================================================
+# macOS System Files
+# ==============================================================================
 .DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
 
-# Xcode User data & Build products
+# ==============================================================================
+# Xcode User Data & Build Products
+# ==============================================================================
 build/
 DerivedData/
 *.pbxuser
@@ -13,12 +23,33 @@ DerivedData/
 *.perspectivev3
 !default.perspectivev3
 xcuserdata/
+*.xcscmblueprint
 *.xccheckout
 *.moved-aside
+*.xcuserstate
 *.xcworkspace/
 !*.xcodeproj/project.xcworkspace
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
 
-# Build & Distribution outputs
+# ==============================================================================
+# Build & Distribution Artifacts
+# ==============================================================================
 dist/
 *.dmg
 *.zip
+*.pkg
+*.app
+SHA256SUMS.txt
+
+# ==============================================================================
+# IDEs & Editors
+# ==============================================================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*~.nib

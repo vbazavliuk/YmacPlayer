@@ -7,7 +7,7 @@
 
 [![macOS Version](https://img.shields.io/badge/macOS-26.0%2B-000000.svg?style=flat-square&logo=apple&logoColor=white)](https://apple.com/macos)
 [![Swift Version](https://img.shields.io/badge/Swift-5.9%20%7C%206.0-F05138.svg?style=flat-square&logo=swift&logoColor=white)](https://swift.org)
-[![Xcode Version](https://img.shields.io/badge/Xcode-15.0%2B-1575F9.svg?style=flat-square&logo=xcode&logoColor=white)](https://developer.apple.com/xcode)
+[![Xcode Version](https://img.shields.io/badge/Xcode-26.0%2B-1575F9.svg?style=flat-square&logo=xcode&logoColor=white)](https://developer.apple.com/xcode)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 [![Latest Release](https://img.shields.io/badge/Release-v1.0.0-E50914.svg?style=flat-square&logo=github)](https://github.com/vbazavluk/YmacPlayer/releases)
 [![Platform](https://img.shields.io/badge/Platform-Apple%20Silicon%20%7C%20Intel-blue.svg?style=flat-square)](https://github.com/vbazavluk/YmacPlayer)
@@ -141,7 +141,7 @@ To add Ymac Player widgets to your macOS 26+ desktop or Notification Center:
 
 ### Prerequisites
 - macOS 26.0 or later.
-- Xcode 15.0 or later (with macOS SDK).
+- Xcode 26.0 or later (with macOS SDK).
 - Apple Developer account (free personal Apple ID or paid developer program).
 
 ### 1. Clone the Repository
