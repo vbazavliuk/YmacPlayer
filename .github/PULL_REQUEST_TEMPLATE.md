@@ -13,9 +13,7 @@ Fixes #(issue)
 
 ## How Has This Been Tested?
 Please describe the tests and environments in which you verified your changes:
-- [ ] macOS Ventura (13.x)
-- [ ] macOS Sonoma (14.x)
-- [ ] macOS Sequoia (15.x)
+- [ ] macOS 26.0+
 - [ ] Menu bar popover tested
 - [ ] Interactive desktop widgets tested
 - [ ] Language switching tested

@@ -7,7 +7,7 @@ We are thrilled to announce the initial official release of **Ymac Player (v1.0.
 ## 🌟 Highlights
 
 - **🎧 Menu Bar Music Popover:** Access YouTube Music instantly from the macOS status bar. View high-resolution album artwork, track title, artist, seekable progress slider, and one-click playback controls.
-- **📱 macOS Sonoma & Sequoia Desktop Widgets:** Control playback and switch between your favorite playlists directly from your desktop with interactive widgets (`systemSmall` and `systemMedium`). Zero application window pops up!
+- **📱 macOS 26+ Desktop Widgets:** Control playback and switch between your favorite playlists directly from your desktop with interactive widgets (`systemSmall` and `systemMedium`). Zero application window pops up!
 - **🌐 10 Built-in Languages:** Fully localized interface supporting English, Русский, Español, Deutsch, Français, Italiano, Português, Türkçe, Українська, and 日本語.
 - **⚡️ Native Media Keys & Control Center:** Seamlessly integrated with `MPNowPlayingInfoCenter` and `MPRemoteCommandCenter`. Control playback with your Mac's physical media keys, Touch Bar, and Lock Screen.
 - **🔒 WebKit Sandboxed Core:** Pure native Swift & SwiftUI application with a sandboxed WebKit engine. Zero Electron overhead, minimal RAM footprint, and complete privacy isolation.
@@ -19,7 +19,7 @@ We are thrilled to announce the initial official release of **Ymac Player (v1.0.
 
 | Asset | Format | Description |
 | :--- | :--- | :--- |
-| **`YmacPlayer-1.0.0.dmg`** | Apple Disk Image | Drag-and-drop installer for macOS 13+ |
+| **`YmacPlayer-1.0.0.dmg`** | Apple Disk Image | Drag-and-drop installer for macOS 26+ |
 | **`YmacPlayer-1.0.0.zip`** | Compressed Archive | Portable standalone `.app` bundle |
 | **`SHA256SUMS.txt`** | Text | Cryptographic checksums for verifying asset integrity |
 
@@ -27,7 +27,7 @@ We are thrilled to announce the initial official release of **Ymac Player (v1.0.
 
 ## 💻 System Requirements
 
-- **Operating System:** macOS 14.0 (Sonoma), macOS 15.0 (Sequoia), or later.
+- **Operating System:** macOS 26.0 or later.
 - **Architecture:** Apple Silicon (M1/M2/M3/M4) & Intel (Universal Binary compatible).
 
 ---

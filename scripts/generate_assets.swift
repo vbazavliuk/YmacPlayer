@@ -149,7 +149,7 @@ struct HeroBannerView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "apple.logo")
                             .font(.system(size: 11))
-                        Text("macOS 14+ • Sonoma • Sequoia")
+                        Text("macOS 26+")
                             .font(.system(size: 11, weight: .semibold))
                     }
                     .foregroundColor(.white.opacity(0.85))
@@ -628,7 +628,7 @@ struct DesktopWidgetsShowcaseView: View {
                         Image(systemName: "square.grid.2x2.fill")
                             .foregroundColor(.red)
                             .font(.system(size: 15, weight: .bold))
-                        Text("macOS Sonoma & Sequoia Interactive Desktop Widgets")
+                        Text("macOS 26+ Interactive Desktop Widgets")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.white)
                     }

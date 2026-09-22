@@ -5,7 +5,7 @@
 # Ymac Player 🎵
 ### *Minimalist YouTube Music Menu Bar Player & Desktop Widgets for macOS*
 
-[![macOS Version](https://img.shields.io/badge/macOS-14.0%2B%20(Sonoma%20|%20Sequoia)-000000.svg?style=flat-square&logo=apple&logoColor=white)](https://apple.com/macos)
+[![macOS Version](https://img.shields.io/badge/macOS-26.0%2B-000000.svg?style=flat-square&logo=apple&logoColor=white)](https://apple.com/macos)
 [![Swift Version](https://img.shields.io/badge/Swift-5.9%20%7C%206.0-F05138.svg?style=flat-square&logo=swift&logoColor=white)](https://swift.org)
 [![Xcode Version](https://img.shields.io/badge/Xcode-15.0%2B-1575F9.svg?style=flat-square&logo=xcode&logoColor=white)](https://developer.apple.com/xcode)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
@@ -33,7 +33,7 @@ Most desktop music players for YouTube Music are heavy Electron-based wrappers t
 **Ymac Player is different:**
 - 🏎 **Native Swift & SwiftUI:** Instant response times and minimal CPU/memory footprint (~50MB RAM vs 600MB+ in Electron).
 - 📍 **Unobtrusive Menu Bar Resident:** Lives exclusively in your macOS menu bar without taking up Dock space or cluttering your command-tab switcher.
-- 🧩 **Interactive Desktop Widgets:** Native macOS Sonoma and Sequoia desktop widgets powered by `AppIntents` — control playback and change playlists right from your wallpaper without switching apps.
+- 🧩 **Interactive Desktop Widgets:** Native macOS 26+ desktop widgets powered by `AppIntents` — control playback and change playlists right from your wallpaper without switching apps.
 - 🎧 **Full System Media Integration:** Native keyboard media keys (F7, F8, F9), macOS Control Center, Touch Bar, and Lock Screen support via `MPNowPlayingInfoCenter`.
 - 🔒 **Zero Telemetry & WebKit Sandboxed:** Your credentials stay securely inside Apple's native WebKit container with no third-party tracking or middleman servers.
 
@@ -51,10 +51,10 @@ Click the menu bar icon to reveal an album artwork card with live scrubbing, tra
 <br/>
 
 ### 2. Interactive Desktop Widgets (`systemMedium` & `systemSmall`)
-macOS Sonoma & Sequoia interactive widgets placed directly on your desktop or Notification Center. Tap buttons to toggle playback, skip tracks, and browse your favorite playlists without opening any app windows.
+macOS 26+ interactive widgets placed directly on your desktop or Notification Center. Tap buttons to toggle playback, skip tracks, and browse your favorite playlists without opening any app windows.
 
 <div align="center">
-  <img src="docs/assets/desktop_widgets.png" width="820" alt="macOS Sonoma & Sequoia Desktop Widgets" />
+  <img src="docs/assets/desktop_widgets.png" width="820" alt="macOS 26+ Desktop Widgets" />
 </div>
 
 <br/>
@@ -82,7 +82,7 @@ Right-click the menu bar icon to change the language instantly, navigate library
 | Feature | Description |
 | :--- | :--- |
 | 📍 **Status Bar Player** | High-resolution album artwork, seekable progress slider, track title, artist info, and full playback controls in an elegant popover. |
-| 🎛 **Interactive Widgets** | macOS Sonoma & Sequoia desktop widgets in `systemSmall` and `systemMedium` sizes utilizing `AppIntents` for instant zero-window clicks. |
+| 🎛 **Interactive Widgets** | macOS 26+ desktop widgets in `systemSmall` and `systemMedium` sizes utilizing `AppIntents` for instant zero-window clicks. |
 | 📚 **Quick Playlist Switcher** | Switch between playlists and mixes directly from the player popover or the desktop widget without opening the browser. |
 | 📜 **Up Next Queue** | Real-time queue inspector popover with live active track indicator and scroll-to-current navigation. |
 | 🎧 **System Media Integration** | Deep integration with `MPNowPlayingInfoCenter` and `MPRemoteCommandCenter`. Full support for keyboard media keys, macOS Control Center, and Lock Screen. |
@@ -123,7 +123,7 @@ Right-click the menu bar icon to change the language instantly, navigate library
 
 ## 🧩 Interactive Desktop Widgets Setup
 
-To add Ymac Player widgets to your macOS desktop or Notification Center:
+To add Ymac Player widgets to your macOS 26+ desktop or Notification Center:
 
 1. **Start the app:** Ensure Ymac Player is running and logged in.
 2. **Open Widget Gallery:**
@@ -140,7 +140,7 @@ To add Ymac Player widgets to your macOS desktop or Notification Center:
 ## 🛠 Building from Source
 
 ### Prerequisites
-- macOS 14.0 (Sonoma) or later.
+- macOS 26.0 or later.
 - Xcode 15.0 or later (with macOS SDK).
 - Apple Developer account (free personal Apple ID or paid developer program).
 

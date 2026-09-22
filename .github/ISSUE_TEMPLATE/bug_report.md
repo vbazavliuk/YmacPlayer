@@ -22,7 +22,7 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots or screen recordings to help explain your problem.
 
 **Environment Information:**
- - macOS Version: [e.g. macOS 14.5 Sonoma, macOS 15.0 Sequoia]
+ - macOS Version: [e.g. macOS 26.0+]
  - Mac Model: [e.g. Apple Silicon M2 MacBook Pro, Intel iMac]
  - Ymac Player Version: [e.g. 1.0.0, or commit hash]
  - Xcode Version (if building from source): [e.g. Xcode 15.4 / 16.0]
