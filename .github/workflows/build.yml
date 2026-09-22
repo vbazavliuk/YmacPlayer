@@ -1,0 +1,36 @@
+name: CI Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build Ymac Player
+    runs-on: macos-14
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Show Xcode Version
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Build Main Application & Widget Extension
+        run: |
+          xcodebuild \
+            -project YmacPlayer.xcodeproj \
+            -scheme YmacPlayer \
+            -configuration Release \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            clean build
+
+      - name: Validate Release Scripts
+        run: |
+          bash -n scripts/build_release.sh

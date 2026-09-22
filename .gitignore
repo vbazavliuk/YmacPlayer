@@ -18,3 +18,7 @@ xcuserdata/
 *.xcworkspace/
 !*.xcodeproj/project.xcworkspace
 
+# Build & Distribution outputs
+dist/
+*.dmg
+*.zip
