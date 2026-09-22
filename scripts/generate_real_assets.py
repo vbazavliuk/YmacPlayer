@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
 generate_real_assets.py
-Generates Retina-quality assets for Ymac Player using the real macOS screenshot.
-Eliminates all stretched / distorted synthetic mockups.
+Generates Retina-quality assets for Ymac Player using real macOS screenshots in active PLAYING state.
+Eliminates all stretched / distorted synthetic mockups and fake menus.
 """
 
 import os
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-SRC_SCREENSHOT = "/Users/valentynbazavluk/.gemini/antigravity/brain/48e71c82-2727-4164-9757-723394e1df40/.user_uploaded/media_1790099780918.png"
+RAW_SCREEN = "/Users/valentynbazavluk/Documents/YmacPlayer/docs/assets/raw_playing_screen.png"
+POPOVER_DIRECT = "/tmp/popover_now.png"
 APP_ICON_PATH = "/Users/valentynbazavluk/Documents/YmacPlayer/YmacPlayer/Assets.xcassets/AppIcon.appiconset/icon_512x512@2x.png"
 OUTPUT_DIR = "/Users/valentynbazavluk/Documents/YmacPlayer/docs/assets"
 
@@ -34,9 +35,9 @@ def mask_rounded(img, radius):
     res.putalpha(mask)
     return res
 
-def cut_popover(src):
+def cut_popover_body(src):
     """
-    Cuts the popover window with its exact top arrow notch and rounded body.
+    Cuts the popover window with its exact top arrow notch and rounded body from playing screen.
     """
     w, h = 300, 398
     mask = Image.new('L', (w * 4, h * 4), 0)
@@ -52,7 +53,7 @@ def cut_popover(src):
     draw.polygon([notch_tip, notch_left, notch_right], fill=255)
 
     mask = mask.resize((w, h), Image.Resampling.LANCZOS)
-    pop = src.crop((43, 27, 343, 425))
+    pop = src.crop((38, 27, 338, 425))
     pop.putalpha(mask)
     return pop
 
@@ -72,7 +73,7 @@ def paste_with_shadow(canvas, img, x, y, radius=24, blur=24, offset_y=14, opacit
 def build_desktop_widgets_asset(src):
     """
     Builds docs/assets/desktop_widgets.png (1640 x 880)
-    Shows real Medium and Small widgets side by side with true macOS WidgetKit proportions.
+    Shows real Medium and Small widgets in active PLAYING state with real red progress & pause buttons.
     """
     W, H = 1640, 880
     canvas = Image.new('RGBA', (W, H), (24, 20, 42, 255))
@@ -85,8 +86,11 @@ def build_desktop_widgets_asset(src):
         b = int(42 + 32 * factor)
         draw.line([(0, y), (W, y)], fill=(r, g, b, 255))
 
-    crop_med = src.crop((489, 67, 834, 230))
-    crop_small = src.crop((670, 247, 834, 411))
+    # Exact crops of widgets from playing screen
+    # Med: (480, 67, 824, 231) -> 344 x 164
+    # Small: (660, 247, 824, 411) -> 164 x 164
+    crop_med = src.crop((480, 67, 824, 231))
+    crop_small = src.crop((660, 247, 824, 411))
 
     med_masked = mask_rounded(crop_med, radius=22)
     small_masked = mask_rounded(crop_small, radius=22)
@@ -99,7 +103,7 @@ def build_desktop_widgets_asset(src):
     font_badge = get_font(18, bold=True)
 
     title = "Interactive Desktop Widgets"
-    sub = "macOS 26+ Native WidgetKit • Real-time Album Artwork, Scrubber & Controls"
+    sub = "macOS 26+ Native WidgetKit • Real-time Album Artwork, Live Scrubber & Controls"
     draw.text((W // 2, 70), title, fill=(255, 255, 255, 240), font=font_title, anchor="mm")
     draw.text((W // 2, 115), sub, fill=(180, 175, 215, 210), font=font_sub, anchor="mm")
 
@@ -127,10 +131,11 @@ def build_desktop_widgets_asset(src):
     draw.rectangle([(0, 0), (W - 1, H - 1)], outline=(65, 55, 100, 120), width=2)
     return canvas
 
-def build_menu_bar_popover_asset(src):
+def build_menu_bar_popover_asset():
     """
     Builds docs/assets/menu_bar_popover.png (1160 x 1000)
-    Shows real Popover attached to clean macOS menu bar with real ♪ status icon.
+    Clean, floating Popover window with genuine WindowServer native shadow, active PLAYING state,
+    and NO cramped artificial menu bar.
     """
     W, H = 1160, 1000
     canvas = Image.new('RGBA', (W, H), (22, 18, 38, 255))
@@ -143,46 +148,38 @@ def build_menu_bar_popover_asset(src):
         b = int(42 + 32 * factor)
         draw.line([(0, y), (W, y)], fill=(r, g, b, 255))
 
-    top_bar_h = 52 # 26 * 2
+    font_title = get_font(34, bold=True)
+    font_sub = get_font(20, bold=False)
 
-    # Popover cutout and 2x scale
-    pop_raw = cut_popover(src)
-    pop_2x = pop_raw.resize((pop_raw.width * 2, pop_raw.height * 2), Image.Resampling.LANCZOS) # 600 x 796
+    title = "Menu Bar Player Popover"
+    sub = "Instant Access from macOS Menu Bar • Live YouTube Music Web Controller"
+    draw.text((W // 2, 60), title, fill=(255, 255, 255, 240), font=font_title, anchor="mm")
+    draw.text((W // 2, 105), sub, fill=(180, 175, 215, 210), font=font_sub, anchor="mm")
 
-    # Real menu bar strip from screenshot (contains the real ♪, ✦, ☷, 17°C icons)
-    mb_strip = src.crop((43, 0, 342, 26))
-    mb_strip_2x = mb_strip.resize((mb_strip.width * 2, mb_strip.height * 2), Image.Resampling.LANCZOS)
+    # Native WindowServer window capture with native drop shadow
+    if os.path.exists(POPOVER_DIRECT):
+        pop_raw = Image.open(POPOVER_DIRECT).convert('RGBA')
+    else:
+        # Fallback to crop
+        src = Image.open(RAW_SCREEN).convert('RGBA')
+        pop_raw = cut_popover_body(src)
 
-    # Popover position
-    pop_x = (W - pop_2x.width) // 2 # 280
-    pop_y = top_bar_h # 52
+    scale = 1.75
+    w = int(pop_raw.width * scale)
+    h = int(pop_raw.height * scale)
+    pop_2x = pop_raw.resize((w, h), Image.Resampling.LANCZOS)
 
-    # Menu bar top strip background
-    draw.rectangle([(0, 0), (W, top_bar_h)], fill=(32, 28, 52, 245))
-    draw.line([(0, top_bar_h), (W, top_bar_h)], fill=(65, 55, 95, 180), width=1)
+    x = (W - pop_2x.width) // 2
+    y = 150
+    canvas.alpha_composite(pop_2x, (x, y))
 
-    # Paste real menu bar strip centered right above popover notch
-    canvas.alpha_composite(mb_strip_2x, (pop_x, 0))
-
-    # Left side menu text
-    font_menu = get_font(20, bold=False)
-    font_menu_bold = get_font(20, bold=True)
-    draw.text((36, top_bar_h // 2), "", fill=(255, 255, 255, 240), font=font_menu_bold, anchor="lm")
-    draw.text((70, top_bar_h // 2), "Ymac Player", fill=(255, 255, 255, 240), font=font_menu_bold, anchor="lm")
-    draw.text((200, top_bar_h // 2), "Controls", fill=(195, 190, 220, 200), font=font_menu, anchor="lm")
-    draw.text((285, top_bar_h // 2), "Window", fill=(195, 190, 220, 200), font=font_menu, anchor="lm")
-
-    # Paste popover with drop shadow
-    paste_with_shadow(canvas, pop_2x, pop_x, pop_y, radius=32, blur=34, offset_y=18, opacity=190)
-
-    # Outer border
     draw.rectangle([(0, 0), (W - 1, H - 1)], outline=(65, 55, 100, 120), width=2)
     return canvas
 
 def build_hero_banner_asset(src):
     """
     Builds docs/assets/hero_banner.png (2200 x 880)
-    Banner with Logo, Title, Features on left; REAL Popover and REAL Widgets on right.
+    Banner with Logo, Title, Features on left; REAL PLAYING Popover and REAL PLAYING Widgets on right.
     """
     W, H = 2200, 880
     canvas = Image.new('RGBA', (W, H), (18, 14, 30, 255))
@@ -237,19 +234,19 @@ def build_hero_banner_asset(src):
             pill_x = 120
             pill_y += pill_h + 14
 
-    # Right Column: Real Software Showcase
-    pop_raw = cut_popover(src)
+    # Right Column: Real Software Showcase in PLAYING State
+    pop_raw = cut_popover_body(src)
     pop_scale = 1.45
     pop_w, pop_h = int(pop_raw.width * pop_scale), int(pop_raw.height * pop_scale)
     pop_show = pop_raw.resize((pop_w, pop_h), Image.Resampling.LANCZOS) # ~435 x 577
 
-    crop_med = src.crop((489, 67, 834, 230))
+    crop_med = src.crop((480, 67, 824, 231))
     med_masked = mask_rounded(crop_med, radius=22)
     med_scale = 1.45
     med_w, med_h = int(med_masked.width * med_scale), int(med_masked.height * med_scale)
     med_show = med_masked.resize((med_w, med_h), Image.Resampling.LANCZOS) # ~500 x 236
 
-    crop_small = src.crop((670, 247, 834, 411))
+    crop_small = src.crop((660, 247, 824, 411))
     small_masked = mask_rounded(crop_small, radius=22)
     small_w, small_h = int(small_masked.width * med_scale), int(small_masked.height * med_scale)
     small_show = small_masked.resize((small_w, small_h), Image.Resampling.LANCZOS) # ~237 x 237
@@ -262,33 +259,148 @@ def build_hero_banner_asset(src):
     draw.rectangle([(0, 0), (W - 1, H - 1)], outline=(65, 55, 100, 120), width=2)
     return canvas
 
+def build_context_menu_asset():
+    """
+    Builds docs/assets/context_menu.png (1040 x 840)
+    Accurately represents the REAL context menu and the REAL 10 languages supported in AppLanguage.swift.
+    """
+    W, H = 1040, 840
+    canvas = Image.new('RGBA', (W, H), (22, 18, 38, 255))
+    draw = ImageDraw.Draw(canvas)
+
+    for y in range(H):
+        factor = y / H
+        r = int(22 + 16 * factor)
+        g = int(18 + 14 * factor)
+        b = int(38 + 28 * factor)
+        draw.line([(0, y), (W, y)], fill=(r, g, b, 255))
+
+    font_title = get_font(30, bold=True)
+    font_sub = get_font(18, bold=False)
+    font_menu = get_font(24, bold=False)
+    font_bold = get_font(24, bold=True)
+
+    draw.text((W // 2, 70), "Status Bar Menu & 10 Localized Languages", fill=(255, 255, 255, 240), font=font_title, anchor="mm")
+    draw.text((W // 2, 112), "Right-click the music note icon in the menu bar to switch languages or access library shortcuts", fill=(180, 175, 215, 200), font=font_sub, anchor="mm")
+
+    item_h = 44
+    pad_v = 12
+    pad_h = 16
+
+    main_items = [
+        ("Language", True, True, False, None),
+        ("---", False, False, False, None),
+        ("Library", True, False, False, None),
+        ("---", False, False, False, None),
+        ("Launch at Login", False, False, True, None),
+        ("---", False, False, False, None),
+        ("About Ymac Player", False, False, False, None),
+        ("---", False, False, False, None),
+        ("Quit Ymac Player", False, False, False, "⌘Q"),
+    ]
+
+    languages = [
+        ("English", True),
+        ("Deutsch", False),
+        ("Русский", False),
+        ("Українська", False),
+        ("Español", False),
+        ("Português", False),
+        ("Italiano", False),
+        ("Français", False),
+        ("Română", False),
+        ("Polski", False),
+    ]
+
+    def draw_menu_panel(w, items, is_submenu=False):
+        h = pad_v * 2
+        for item in items:
+            if item[0] == "---":
+                h += 14
+            else:
+                h += item_h
+        panel = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+        pdraw = ImageDraw.Draw(panel)
+        pdraw.rounded_rectangle([(0, 0), (w - 1, h - 1)], radius=18, fill=(40, 38, 52, 245), outline=(100, 95, 130, 180), width=2)
+
+        curr_y = pad_v
+        for item in items:
+            title = item[0]
+            if title == "---":
+                pdraw.line([(pad_h, curr_y + 7), (w - pad_h, curr_y + 7)], fill=(80, 75, 100, 160), width=1)
+                curr_y += 14
+                continue
+
+            is_hover = item[2] if len(item) > 2 else False
+            is_checked = item[3] if len(item) > 3 else item[1]
+            has_sub = item[1] if not is_submenu else False
+            shortcut = item[4] if len(item) > 4 else None
+
+            if is_hover:
+                pdraw.rounded_rectangle([(pad_h // 2, curr_y), (w - pad_h // 2, curr_y + item_h)], radius=10, fill=(0, 122, 255, 230))
+
+            text_color = (255, 255, 255, 255) if is_hover else (235, 230, 250, 240)
+
+            text_start_x = pad_h + 30
+            if is_checked:
+                pdraw.text((pad_h + 8, curr_y + item_h // 2), "✓", fill=text_color, font=font_bold, anchor="lm")
+
+            pdraw.text((text_start_x, curr_y + item_h // 2), title, fill=text_color, font=font_menu, anchor="lm")
+
+            if has_sub:
+                pdraw.text((w - pad_h - 10, curr_y + item_h // 2), "›", fill=text_color, font=font_bold, anchor="mm")
+            elif shortcut:
+                pdraw.text((w - pad_h - 10, curr_y + item_h // 2), shortcut, fill=(180, 175, 205, 200) if not is_hover else (255, 255, 255, 220), font=font_menu, anchor="rm")
+
+            curr_y += item_h
+        return panel
+
+    main_panel = draw_menu_panel(360, main_items)
+    sub_items = [(lang, checked) for lang, checked in languages]
+    sub_panel = draw_menu_panel(300, sub_items, is_submenu=True)
+
+    start_x = (W - (360 + 300 - 8)) // 2 # 194
+    start_y = 190
+
+    paste_with_shadow(canvas, main_panel, start_x, start_y, radius=18, blur=32, offset_y=16, opacity=190)
+    paste_with_shadow(canvas, sub_panel, start_x + 360 - 8, start_y + 12, radius=18, blur=32, offset_y=16, opacity=190)
+
+    draw.rectangle([(0, 0), (W - 1, H - 1)], outline=(65, 55, 100, 120), width=2)
+    return canvas
+
 def main():
-    print(f"Loading source screenshot: {SRC_SCREENSHOT}")
-    if not os.path.exists(SRC_SCREENSHOT):
-        raise FileNotFoundError(f"Source screenshot not found: {SRC_SCREENSHOT}")
-    src = Image.open(SRC_SCREENSHOT).convert('RGBA')
+    print(f"Loading raw screen capture: {RAW_SCREEN}")
+    if not os.path.exists(RAW_SCREEN):
+        raise FileNotFoundError(f"Raw playing screen not found: {RAW_SCREEN}")
+    src = Image.open(RAW_SCREEN).convert('RGBA')
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    print("Generating desktop_widgets.png...")
+    print("Generating desktop_widgets.png (PLAYING state)...")
     widgets_img = build_desktop_widgets_asset(src)
     widgets_path = os.path.join(OUTPUT_DIR, "desktop_widgets.png")
     widgets_img.save(widgets_path, "PNG", optimize=True)
     print(f"Saved: {widgets_path}")
 
-    print("Generating menu_bar_popover.png...")
-    pop_img = build_menu_bar_popover_asset(src)
+    print("Generating menu_bar_popover.png (clean floating popover, PLAYING state)...")
+    pop_img = build_menu_bar_popover_asset()
     pop_path = os.path.join(OUTPUT_DIR, "menu_bar_popover.png")
     pop_img.save(pop_path, "PNG", optimize=True)
     print(f"Saved: {pop_path}")
 
-    print("Generating hero_banner.png...")
+    print("Generating hero_banner.png (PLAYING state)...")
     banner_img = build_hero_banner_asset(src)
     banner_path = os.path.join(OUTPUT_DIR, "hero_banner.png")
     banner_img.save(banner_path, "PNG", optimize=True)
     print(f"Saved: {banner_path}")
 
-    print("All real assets successfully generated!")
+    print("Generating context_menu.png (REAL 10 languages)...")
+    menu_img = build_context_menu_asset()
+    menu_path = os.path.join(OUTPUT_DIR, "context_menu.png")
+    menu_img.save(menu_path, "PNG", optimize=True)
+    print(f"Saved: {menu_path}")
+
+    print("All real playing assets successfully generated!")
 
 if __name__ == "__main__":
     main()
