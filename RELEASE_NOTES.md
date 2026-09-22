@@ -27,26 +27,21 @@ We are thrilled to announce the initial official release of **Ymac Player (v1.0.
 
 ## 💻 System Requirements
 
-- **Operating System:** macOS 13.0 (Ventura), macOS 14.0 (Sonoma), macOS 15.0 (Sequoia), or later.
+- **Operating System:** macOS 14.0 (Sonoma), macOS 15.0 (Sequoia), or later.
 - **Architecture:** Apple Silicon (M1/M2/M3/M4) & Intel (Universal Binary compatible).
 
 ---
 
 ## 🛠 Installation Instructions
 
-1. Download **`YmacPlayer-1.0.0.dmg`** from the Assets section below.
+1. Download **`YmacPlayer-1.0.0.dmg`** (or `YmacPlayer-1.0.0.zip`) from Assets below.
 2. Double-click the `.dmg` file and drag **Ymac Player.app** into your **Applications** folder.
-3. Launch **Ymac Player** from Applications or Spotlight.
-4. Click the music note icon in the menu bar and click **Login** to sign into your YouTube Music account.
-
-> [!TIP]
-> **macOS Security Note (Gatekeeper):**  
-> If macOS alerts that the developer cannot be verified because the application was compiled locally or without an Apple Developer ID certificate:
-> 1. Right-click (or Control-click) `YmacPlayer.app` in `/Applications` and select **Open**.
-> 2. Or run this command in Terminal to clear the quarantine flag:
->    ```bash
->    xattr -cr /Applications/YmacPlayer.app
->    ```
+3. Open Terminal and run this one-time command (to clear Apple Gatekeeper quarantine on open-source binaries):
+   ```bash
+   xattr -cr /Applications/YmacPlayer.app
+   ```
+   *(Alternatively: Right-click `YmacPlayer.app` in Finder and select **Open**).*
+4. Launch **Ymac Player**, click the menu bar icon, and click **Login** to connect your YouTube Music account!
 
 ---
 

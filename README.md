@@ -5,7 +5,7 @@
 # Ymac Player 🎵
 ### *Minimalist YouTube Music Menu Bar Player & Desktop Widgets for macOS*
 
-[![macOS Version](https://img.shields.io/badge/macOS-13.0%2B%20(Ventura%20|%20Sonoma%20|%20Sequoia)-000000.svg?style=flat-square&logo=apple&logoColor=white)](https://apple.com/macos)
+[![macOS Version](https://img.shields.io/badge/macOS-14.0%2B%20(Sonoma%20|%20Sequoia)-000000.svg?style=flat-square&logo=apple&logoColor=white)](https://apple.com/macos)
 [![Swift Version](https://img.shields.io/badge/Swift-5.9%20%7C%206.0-F05138.svg?style=flat-square&logo=swift&logoColor=white)](https://swift.org)
 [![Xcode Version](https://img.shields.io/badge/Xcode-15.0%2B-1575F9.svg?style=flat-square&logo=xcode&logoColor=white)](https://developer.apple.com/xcode)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
@@ -95,21 +95,29 @@ Right-click the menu bar icon to change the language instantly, navigate library
 
 ## 📥 Installation
 
-### Option 1: Direct Download (DMG / ZIP)
-1. Go to the [Releases](https://github.com/vbazavluk/YmacPlayer/releases) page.
-2. Download **`YmacPlayer-1.0.0.dmg`** (or `YmacPlayer-1.0.0.zip`).
-3. Open the `.dmg` and drag **Ymac Player.app** into `/Applications`.
-4. Launch the application from Applications or Spotlight.
-5. Click the menu bar icon, click **Login**, and authenticate with your YouTube Music account.
+> [!IMPORTANT]
+> ### 🛡️ Running Open-Source macOS Apps (No Apple Developer ID)
+> Ymac Player is a 100% free, community-driven open-source project. Because we do not pay for Apple's \$99/year Developer Program, the releases are distributed as ad-hoc signed open-source binaries.
+> 
+> When you first open the app, macOS Gatekeeper will protect you by blocking untrusted downloads with an alert:  
+> *"Ymac Player is damaged and can't be opened. You should move it to the Trash"* or *"Apple cannot check it for malicious software"*.
+> 
+> **To launch the app, simply remove the quarantine attribute:**
+> 
+> ```bash
+> xattr -cr /Applications/YmacPlayer.app
+> ```
+> 
+> *Alternatively, via Finder:*
+> 1. In Finder, open `/Applications`.
+> 2. **Right-click** (or `Control` + click) `YmacPlayer.app` and select **Open**.
+> 3. Click **Open** in the dialog. macOS will remember your approval and will never ask again.
 
-> [!TIP]
-> **macOS Gatekeeper Note:**  
-> If macOS alerts that the developer cannot be verified when opening the app:
-> 1. Right-click (or Control-click) `YmacPlayer.app` in `/Applications` and choose **Open**.
-> 2. Alternatively, remove the quarantine attribute via Terminal:
->    ```bash
->    xattr -cr /Applications/YmacPlayer.app
->    ```
+### Steps to Install:
+1. Download **`YmacPlayer-1.0.0.dmg`** (or `YmacPlayer-1.0.0.zip`) from [Releases](https://github.com/vbazavluk/YmacPlayer/releases).
+2. Open the `.dmg` and drag **Ymac Player.app** into `/Applications`.
+3. Run `xattr -cr /Applications/YmacPlayer.app` (or Right-click > Open).
+4. Click the music note icon in your menu bar, click **Login**, and sign into YouTube Music!
 
 ---
 
@@ -132,7 +140,7 @@ To add Ymac Player widgets to your macOS desktop or Notification Center:
 ## 🛠 Building from Source
 
 ### Prerequisites
-- macOS 13.0 (Ventura) or later.
+- macOS 14.0 (Sonoma) or later.
 - Xcode 15.0 or later (with macOS SDK).
 - Apple Developer account (free personal Apple ID or paid developer program).
 

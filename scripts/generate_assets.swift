@@ -149,7 +149,7 @@ struct HeroBannerView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "apple.logo")
                             .font(.system(size: 11))
-                        Text("macOS 13+ • Ventura • Sonoma • Sequoia")
+                        Text("macOS 14+ • Sonoma • Sequoia")
                             .font(.system(size: 11, weight: .semibold))
                     }
                     .foregroundColor(.white.opacity(0.85))
