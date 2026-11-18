@@ -9,7 +9,7 @@
 [![Swift Version](https://img.shields.io/badge/Swift-5.9%20%7C%206.0-F05138.svg?style=flat-square&logo=swift&logoColor=white)](https://swift.org)
 [![Xcode Version](https://img.shields.io/badge/Xcode-26.0%2B-1575F9.svg?style=flat-square&logo=xcode&logoColor=white)](https://developer.apple.com/xcode)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-[![Latest Release](https://img.shields.io/badge/Release-v1.0.0-E50914.svg?style=flat-square&logo=github)](https://github.com/vbazavliuk/YmacPlayer/releases)
+[![Latest Release](https://img.shields.io/badge/Release-v1.1.0-E50914.svg?style=flat-square&logo=github)](https://github.com/vbazavliuk/YmacPlayer/releases)
 [![Platform](https://img.shields.io/badge/Platform-Apple%20Silicon%20%7C%20Intel-blue.svg?style=flat-square)](https://github.com/vbazavliuk/YmacPlayer)
 
 <p align="center">
@@ -114,7 +114,7 @@ Right-click the menu bar icon to change the language instantly, navigate library
 > 3. Click **Open** in the dialog. macOS will remember your approval and will never ask again.
 
 ### Steps to Install:
-1. Download **`YmacPlayer-1.0.0.dmg`** (or `YmacPlayer-1.0.0.zip`) from [Releases](https://github.com/vbazavliuk/YmacPlayer/releases).
+1. Download **`YmacPlayer-1.1.0.dmg`** (or `YmacPlayer-1.1.0.zip`) from [Releases](https://github.com/vbazavliuk/YmacPlayer/releases).
 2. Open the `.dmg` and drag **Ymac Player.app** into `/Applications`.
 3. Run `xattr -cr /Applications/YmacPlayer.app` (or Right-click > Open).
 4. Click the music note icon in your menu bar, click **Login**, and sign into YouTube Music!
@@ -169,8 +169,8 @@ We provide an automated release script that compiles the Release configuration, 
 Artifacts will be output to `./dist/`:
 ```
 dist/
-├── YmacPlayer-1.0.0.dmg
-├── YmacPlayer-1.0.0.zip
+├── YmacPlayer-1.1.0.dmg
+├── YmacPlayer-1.1.0.zip
 └── SHA256SUMS.txt
 ```
 
@@ -185,7 +185,7 @@ If you sign the application using a free personal Apple ID (`Apple Development: 
 - **How to refresh:** Simply open the project in Xcode and press **⌘R** to rebuild and install a fresh profile, or purchase an Apple Developer Program membership for yearly signing certificates.
 
 ### App Groups & Entitlements
-Ymac Player uses an App Group (`group.com.ymacplayer`) to share playback state between the menu bar application and the Widget Extension:
+Ymac Player uses an App Group (`9R2Z2PT297.group.com.ymacplayer`) to share playback state between the menu bar application and the Widget Extension:
 - Both `YmacPlayer.entitlements` and `YmacPlayerWidgetExtension.entitlements` must include the matching `com.apple.security.application-groups` entitlement.
 - The Widget Extension requires `com.apple.security.app-sandbox` set to `YES`.
 
@@ -231,7 +231,7 @@ flowchart TD
     end
 
     subgraph IPC["Inter-Process Communication"]
-        Ctrl --> |"Writes JSON State & Artwork"| AG["App Group Shared Container (group.com.ymacplayer)"]
+        Ctrl --> |"Writes JSON State & Artwork"| AG["App Group Shared Container (9R2Z2PT297.group.com.ymacplayer)"]
         Ctrl --> |"Darwin Notification (cfnotificationcenter)"| DN["Darwin Notification Center"]
     end
 

@@ -36,7 +36,7 @@ public struct YTMQueueItem: Identifiable, Hashable, Codable, Sendable {
     }
 }
 
-public struct PlayerSnapshot: Codable, Sendable {
+public struct PlayerSnapshot: Equatable, Codable, Sendable {
     public let title: String
     public let artist: String
     public let isPlaying: Bool
@@ -48,4 +48,30 @@ public struct PlayerSnapshot: Codable, Sendable {
     public let hasSelectedPlaylist: Bool
     public let language: String
     public let playlists: [YTMPlaylist]
+
+    public init(
+        title: String,
+        artist: String,
+        isPlaying: Bool,
+        currentTime: Double,
+        duration: Double,
+        isShuffle: Bool,
+        repeatMode: Int,
+        isLoggedIn: Bool,
+        hasSelectedPlaylist: Bool,
+        language: String,
+        playlists: [YTMPlaylist]
+    ) {
+        self.title = title
+        self.artist = artist
+        self.isPlaying = isPlaying
+        self.currentTime = currentTime
+        self.duration = duration
+        self.isShuffle = isShuffle
+        self.repeatMode = repeatMode
+        self.isLoggedIn = isLoggedIn
+        self.hasSelectedPlaylist = hasSelectedPlaylist
+        self.language = language
+        self.playlists = playlists
+    }
 }

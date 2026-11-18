@@ -7,13 +7,13 @@ import WidgetKit
 
 /// The main application delegate responsible for managing the macOS menu bar status item, popover, and context menu for Ymac Player.
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let defaults = UserDefaults(suiteName: "group.com.ymacplayer")
+        let defaults = UserDefaults(suiteName: "9R2Z2PT297.group.com.ymacplayer")
         defaults?.set(true, forKey: "widgetIsAppRunning")
         defaults?.synchronize()
         WidgetCenter.shared.reloadAllTimelines()
@@ -23,7 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        if let defaults = UserDefaults(suiteName: "group.com.ymacplayer") {
+        if let defaults = UserDefaults(suiteName: "9R2Z2PT297.group.com.ymacplayer") {
             defaults.set(false, forKey: "widgetIsAppRunning")
             defaults.set(false, forKey: "widgetIsPlaying")
             defaults.set("", forKey: "widgetTitle")
@@ -34,7 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         if let containerURL = FileManager.default.containerURL(
-            forSecurityApplicationGroupIdentifier: "group.com.ymacplayer"
+            forSecurityApplicationGroupIdentifier: "9R2Z2PT297.group.com.ymacplayer"
         ) {
             let fileURL = containerURL.appendingPathComponent("artwork.png")
             try? FileManager.default.removeItem(at: fileURL)
@@ -51,6 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         popover.contentSize = NSSize(width: 300, height: 390)
         popover.behavior = .transient
+        popover.delegate = self
 
         popover.contentViewController = NSHostingController(
             rootView: MainWidgetView()
@@ -58,6 +59,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         self.popover = popover
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        let controller = YTMController.shared
+        controller.webView.window?.makeFirstResponder(nil)
+        controller.webView.translatesAutoresizingMaskIntoConstraints = true
+        controller.webView.autoresizingMask = [.width, .height]
+        controller.attachToBackgroundWindow()
     }
 
     /// Sets up the system status bar item and mouse click listeners.
@@ -88,7 +97,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        if event.type == .rightMouseUp {
+        if event.type == .rightMouseUp || event.modifierFlags.contains(.control) {
+            if popover?.isShown == true {
+                popover?.performClose(nil)
+            }
             showContextMenu(for: sender, event: event)
         } else {
             togglePopover()
@@ -314,23 +326,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func showAboutWindow() {
+        if popover?.isShown == true {
+            popover?.performClose(nil)
+        }
+
+        let controller = YTMController.shared
+        let language = controller.currentLanguage
+
         let alert = NSAlert()
-
-        alert.messageText = "Ymac Player"
-        alert.informativeText = """
-        Version 1.0.0
-
-        A lightweight, background-native macOS status bar player and desktop widget for YouTube Music.
-
-        Key Features:
-        • Menu Bar Popover: Full player controls, track seeker, and queue viewer.
-        • Interactive Desktop Widgets: Control playback and switch playlists directly from macOS Widgets via AppIntents.
-        • System Media Integration: Full support for Control Center, Now Playing metadata, and media keys.
-        • Multi-Language Support: Available in 10 languages with real-time UI language switching.
-        • Background Web Engine: Runs in a dedicated background container to ensure uninterrupted audio playback.
-
-        Built with SwiftUI, WebKit, WidgetKit, and AppIntents.
-        """
+        alert.messageText = LocalizedStrings.aboutMenuTitle(language)
+        alert.informativeText = LocalizedStrings.aboutDescription(language)
         alert.alertStyle = .informational
         alert.icon = NSImage(
             systemSymbolName: "music.note.house.fill",
@@ -338,6 +343,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         alert.addButton(withTitle: "OK")
+        NSApp.activate(ignoringOtherApps: true)
         alert.runModal()
     }
 

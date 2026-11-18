@@ -8,11 +8,15 @@ struct QueuePopoverView: View {
     @EnvironmentObject private var controller: YTMController
     @Binding var isPresented: Bool
 
+    private var selectedTrackId: String? {
+        controller.queue.first(where: { $0.isSelected })?.id
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(LocalizedStrings.upNext(controller.currentLanguage))
                 .font(.caption.bold())
-                .padding(.horizontal, 8)
+                .padding(.horizontal, 10)
                 .padding(.top, 8)
 
             Divider()
@@ -21,6 +25,7 @@ struct QueuePopoverView: View {
                 Text(LocalizedStrings.emptyQueue(controller.currentLanguage))
                     .font(.caption)
                     .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 72, alignment: .center)
                     .padding(12)
             } else {
                 ScrollViewReader { proxy in
@@ -83,23 +88,33 @@ struct QueuePopoverView: View {
                                 .id(track.id)
                             }
                         }
-                        .padding(.horizontal, 4)
+                        .padding(.horizontal, 6)
                         .padding(.bottom, 8)
                     }
-                    .frame(width: 250, height: 260)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 260)
                     .onAppear {
-                        if let selected = controller.queue.first(
-                            where: { $0.isSelected }
-                        ) {
-                            proxy.scrollTo(
-                                selected.id,
-                                anchor: .center
-                            )
-                        }
+                        scrollToSelected(using: proxy, animated: false)
+                    }
+                    .onChange(of: selectedTrackId) { _, _ in
+                        scrollToSelected(using: proxy, animated: true)
                     }
                 }
             }
         }
         .frame(width: 260)
+    }
+
+    private func scrollToSelected(using proxy: ScrollViewProxy, animated: Bool) {
+        guard let targetId = selectedTrackId else { return }
+        DispatchQueue.main.async {
+            if animated {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    proxy.scrollTo(targetId, anchor: .center)
+                }
+            } else {
+                proxy.scrollTo(targetId, anchor: .center)
+            }
+        }
     }
 }

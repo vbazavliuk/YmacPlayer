@@ -40,26 +40,139 @@ protocol WidgetTimeFormatting {
 
 extension WidgetTimeFormatting {
     var trackStartDate: Date {
-        Date().addingTimeInterval(-entry.currentTime)
+        let safeCurrentTime = entry.currentTime.isFinite ? max(0, entry.currentTime) : 0
+        return entry.date.addingTimeInterval(-safeCurrentTime)
     }
 
     /// A valid date range for `ProgressView(timerInterval:)`.
-    /// Returns nil when the range would be invalid (zero/negative duration, or elapsed >= duration).
+    /// Returns nil when the range would be invalid (non-finite, zero/negative duration, or elapsed >= duration).
     var timerRange: ClosedRange<Date>? {
-        guard entry.duration > 0, entry.currentTime < entry.duration else { return nil }
-        let now = Date()
-        let startDate = now.addingTimeInterval(-entry.currentTime)
-        let endDate = startDate.addingTimeInterval(entry.duration - entry.currentTime)
+        guard entry.duration.isFinite,
+              entry.currentTime.isFinite,
+              entry.duration > 0,
+              entry.currentTime >= 0,
+              entry.currentTime < entry.duration
+        else { return nil }
+        let startDate = entry.date.addingTimeInterval(-entry.currentTime)
+        let endDate = startDate.addingTimeInterval(entry.duration)
         guard endDate > startDate else { return nil }
         return startDate...endDate
     }
 
+    var safeDuration: Double {
+        guard entry.duration.isFinite, entry.duration > 0 else { return 0 }
+        return entry.duration
+    }
+
+    var clampedCurrentTime: Double {
+        guard entry.currentTime.isFinite, entry.currentTime > 0 else { return 0 }
+        return safeDuration > 0 ? min(entry.currentTime, safeDuration) : entry.currentTime
+    }
+
+    var progressValue: Double {
+        guard safeDuration > 0 else { return 0 }
+        return min(clampedCurrentTime, safeDuration)
+    }
+
+    var progressTotal: Double {
+        safeDuration > 0 ? safeDuration : 1
+    }
+
+    var displayTitle: String {
+        let trimmed = entry.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "Ymac Player" : trimmed
+    }
+
+    var displayArtist: String {
+        let trimmed = entry.artist.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            return trimmed
+        } else if entry.isPlaying {
+            return LocalizedStrings.playing(entry.language)
+        } else {
+            return LocalizedStrings.paused(entry.language)
+        }
+    }
+
+    var normalizedRepeatMode: Int {
+        (0...2).contains(entry.repeatMode) ? entry.repeatMode : 0
+    }
+
+    var validPlaylists: [WidgetPlaylistItem] {
+        var seenIDs = Set<String>()
+        return entry.playlists.compactMap { item in
+            let cleanID = item.id.trimmingCharacters(in: .whitespacesAndNewlines)
+            let cleanTitle = item.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !cleanID.isEmpty, !cleanTitle.isEmpty, seenIDs.insert(cleanID).inserted else {
+                return nil
+            }
+            return WidgetPlaylistItem(id: cleanID, title: cleanTitle)
+        }
+    }
+
     func formatTime(_ seconds: Double) -> String {
-        guard !seconds.isNaN, !seconds.isInfinite, seconds > 0 else { return "0:00" }
+        guard seconds.isFinite, seconds >= 0, seconds < Double(Int.max) else { return "0:00" }
         let total = Int(seconds)
-        let mins = total / 60
+        let hours = total / 3600
+        let mins = (total % 3600) / 60
         let secs = total % 60
-        return String(format: "%d:%02d", mins, secs)
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, mins, secs)
+        } else {
+            return String(format: "%d:%02d", mins, secs)
+        }
+    }
+
+    @ViewBuilder
+    func progressBarView() -> some View {
+        if entry.isPlaying, let range = timerRange {
+            ProgressView(timerInterval: range, countsDown: false) {
+                EmptyView()
+            } currentValueLabel: {
+                EmptyView()
+            }
+            .tint(.red)
+        } else {
+            ProgressView(
+                value: progressValue,
+                total: progressTotal
+            )
+            .tint(entry.isPlaying ? .red : .gray)
+        }
+    }
+
+    @ViewBuilder
+    func timeLabelsView() -> some View {
+        HStack {
+            if entry.isPlaying, timerRange != nil {
+                Text(trackStartDate, style: .timer)
+            } else {
+                Text(formatTime(clampedCurrentTime))
+            }
+
+            Spacer()
+
+            Text(formatTime(safeDuration))
+        }
+    }
+
+    @ViewBuilder
+    func widgetBackgroundView(topOpacity: Double) -> some View {
+        ZStack {
+            if entry.isAppRunning && entry.hasSelectedPlaylist, let nsImage = entry.artworkImage {
+                Image(nsImage: nsImage)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Color.black
+            }
+
+            LinearGradient(
+                colors: [.black.opacity(topOpacity), .black.opacity(0.88)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
     }
 }
 
@@ -103,7 +216,7 @@ struct Provider: TimelineProvider {
     }
 
     private func getEntry() -> SimpleEntry {
-        guard let defaults = UserDefaults(suiteName: "group.com.ymacplayer") else {
+        guard let defaults = UserDefaults(suiteName: "9R2Z2PT297.group.com.ymacplayer") else {
             return SimpleEntry(
                 date: Date(),
                 title: "Ymac Player",
@@ -122,11 +235,12 @@ struct Provider: TimelineProvider {
             )
         }
 
-        let isAppRunning = defaults.bool(forKey: "widgetIsAppRunning")
+        let rawTitleCheck = defaults.string(forKey: "widgetTitle")?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let isAppRunning = defaults.bool(forKey: "widgetIsAppRunning") || (!rawTitleCheck.isEmpty && rawTitleCheck != "Ymac Player")
 
         var artworkImage: NSImage? = nil
         if isAppRunning, let containerURL = FileManager.default.containerURL(
-            forSecurityApplicationGroupIdentifier: "group.com.ymacplayer"
+            forSecurityApplicationGroupIdentifier: "9R2Z2PT297.group.com.ymacplayer"
         ) {
             let fileURL = containerURL.appendingPathComponent("artwork.png")
             if let image = NSImage(contentsOf: fileURL) {
@@ -135,16 +249,25 @@ struct Provider: TimelineProvider {
         }
 
         let rawTitle = defaults.string(forKey: "widgetTitle") ?? "Ymac Player"
-        let title = (rawTitle == "YouTube Music" || rawTitle == "U-Music" || !isAppRunning) ? "Ymac Player" : rawTitle
+        let trimmedTitle = rawTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let title = (trimmedTitle.isEmpty || trimmedTitle == "YouTube Music" || trimmedTitle == "U-Music" || !isAppRunning)
+            ? "Ymac Player"
+            : trimmedTitle
 
         let artist = isAppRunning ? (defaults.string(forKey: "widgetArtist") ?? "") : ""
         let isPlaying = isAppRunning ? defaults.bool(forKey: "widgetIsPlaying") : false
-        let currentTime = isAppRunning ? defaults.double(forKey: "widgetCurrentTime") : 0.0
-        let duration = isAppRunning ? defaults.double(forKey: "widgetDuration") : 0.0
+        let rawCurrentTime = isAppRunning ? defaults.double(forKey: "widgetCurrentTime") : 0.0
+        let rawDuration = isAppRunning ? defaults.double(forKey: "widgetDuration") : 0.0
+        let duration = (rawDuration.isFinite && rawDuration >= 0) ? rawDuration : 0.0
+        let currentTime: Double = {
+            guard rawCurrentTime.isFinite, rawCurrentTime >= 0 else { return 0.0 }
+            return duration > 0 ? min(rawCurrentTime, duration) : rawCurrentTime
+        }()
         let isShuffle = isAppRunning ? defaults.bool(forKey: "widgetIsShuffle") : false
-        let repeatMode = isAppRunning ? defaults.integer(forKey: "widgetRepeatMode") : 0
+        let rawRepeatMode = isAppRunning ? defaults.integer(forKey: "widgetRepeatMode") : 0
+        let repeatMode = (0...2).contains(rawRepeatMode) ? rawRepeatMode : 0
         let isLoggedIn = defaults.object(forKey: "widgetIsLoggedIn") != nil ? defaults.bool(forKey: "widgetIsLoggedIn") : true
-        
+
         let storedHasSelectedPlaylist = defaults.bool(forKey: "widgetHasSelectedPlaylist")
         let hasActiveTrack = isAppRunning && !title.isEmpty && title != "Ymac Player" && title != "Ymac"
         let effectiveHasPlaylist = isAppRunning && (storedHasSelectedPlaylist || hasActiveTrack)
@@ -154,8 +277,15 @@ struct Provider: TimelineProvider {
 
         var playlistsArray: [WidgetPlaylistItem] = []
         if isAppRunning, let rawList = defaults.array(forKey: "widgetPlaylists") as? [[String: String]] {
+            var seenIDs = Set<String>()
             playlistsArray = rawList.compactMap { dict in
-                guard let id = dict["id"], let t = dict["title"] else { return nil }
+                guard
+                    let id = dict["id"]?.trimmingCharacters(in: .whitespacesAndNewlines),
+                    let t = dict["title"]?.trimmingCharacters(in: .whitespacesAndNewlines),
+                    !id.isEmpty,
+                    !t.isEmpty,
+                    seenIDs.insert(id).inserted
+                else { return nil }
                 return WidgetPlaylistItem(id: id, title: t)
             }
         }
@@ -279,6 +409,8 @@ struct SmallWidgetView: View, WidgetTimeFormatting {
                     Text(LocalizedStrings.pleaseSignIn(entry.language))
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.red)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
                 }
                 .padding(4)
                 Spacer()
@@ -296,7 +428,7 @@ struct SmallWidgetView: View, WidgetTimeFormatting {
                             .foregroundColor(.yellow)
                     }
 
-                    if entry.playlists.isEmpty {
+                    if validPlaylists.isEmpty {
                         Spacer()
                         Text(LocalizedStrings.loadingPlaylists(entry.language))
                             .font(.system(size: 10))
@@ -304,7 +436,7 @@ struct SmallWidgetView: View, WidgetTimeFormatting {
                         Spacer()
                     } else {
                         VStack(spacing: 2.5) {
-                            ForEach(entry.playlists.prefix(4), id: \.id) { playlist in
+                            ForEach(validPlaylists.prefix(4), id: \.id) { playlist in
                                 Button(intent: SelectPlaylistIntent(playlistID: playlist.id)) {
                                     HStack(spacing: 4) {
                                         Image(systemName: "play.circle.fill")
@@ -333,12 +465,12 @@ struct SmallWidgetView: View, WidgetTimeFormatting {
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(alignment: .top, spacing: 2) {
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(entry.title)
+                            Text(displayTitle)
                                 .font(.system(size: 11, weight: .bold))
                                 .foregroundColor(.white)
                                 .lineLimit(1)
 
-                            Text(entry.artist.isEmpty ? (entry.isPlaying ? LocalizedStrings.playing(entry.language) : LocalizedStrings.paused(entry.language)) : entry.artist)
+                            Text(displayArtist)
                                 .font(.system(size: 9))
                                 .foregroundColor(.white.opacity(0.8))
                                 .lineLimit(1)
@@ -364,36 +496,13 @@ struct SmallWidgetView: View, WidgetTimeFormatting {
                 Spacer(minLength: 0)
 
                 // Progress bar
-                if entry.isPlaying, entry.duration > 0, let range = timerRange {
-                    ProgressView(timerInterval: range, countsDown: false) {
-                        EmptyView()
-                    } currentValueLabel: {
-                        EmptyView()
-                    }
-                    .tint(.red)
-                } else {
-                    ProgressView(
-                        value: max(0, min(entry.currentTime, entry.duration)),
-                        total: max(entry.duration, 1)
-                    )
-                    .tint(entry.isPlaying ? .red : .gray)
-                }
+                progressBarView()
 
                 // Playback timer
-                HStack {
-                    if entry.isPlaying {
-                        Text(trackStartDate, style: .timer)
-                    } else {
-                        Text(formatTime(entry.currentTime))
-                    }
-
-                    Spacer()
-
-                    Text(formatTime(entry.duration))
-                }
-                .font(.system(size: 8, weight: .semibold, design: .monospaced))
-                .foregroundColor(.white.opacity(0.85))
-                .padding(.horizontal, 2)
+                timeLabelsView()
+                    .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.85))
+                    .padding(.horizontal, 2)
 
                 // Playback control buttons
                 HStack(spacing: 0) {
@@ -439,9 +548,9 @@ struct SmallWidgetView: View, WidgetTimeFormatting {
 
                     Spacer()
                     Button(intent: ToggleRepeatIntent()) {
-                        Image(systemName: entry.repeatMode == 2 ? "repeat.1" : "repeat")
+                        Image(systemName: normalizedRepeatMode == 2 ? "repeat.1" : "repeat")
                             .font(.system(size: 9.5, weight: .bold))
-                            .foregroundColor(entry.repeatMode > 0 ? .blue : .white.opacity(0.5))
+                            .foregroundColor(normalizedRepeatMode > 0 ? .blue : .white.opacity(0.5))
                             .frame(width: 20, height: 20)
                             .contentShape(Rectangle())
                     }
@@ -452,21 +561,7 @@ struct SmallWidgetView: View, WidgetTimeFormatting {
         }
         .padding(6)
         .containerBackground(for: .widget) {
-            ZStack {
-                if entry.isAppRunning && entry.hasSelectedPlaylist, let nsImage = entry.artworkImage {
-                    Image(nsImage: nsImage)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    Color.black
-                }
-
-                LinearGradient(
-                    colors: [.black.opacity(0.35), .black.opacity(0.88)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            }
+            widgetBackgroundView(topOpacity: 0.35)
         }
     }
 }
@@ -475,16 +570,6 @@ struct SmallWidgetView: View, WidgetTimeFormatting {
 
 struct MediumWidgetView: View, WidgetTimeFormatting {
     let entry: SimpleEntry
-
-    private var displayArtist: String {
-        if !entry.artist.isEmpty {
-            return entry.artist
-        } else if entry.isPlaying {
-            return LocalizedStrings.playing(entry.language)
-        } else {
-            return LocalizedStrings.paused(entry.language)
-        }
-    }
 
     private var appNotRunningView: some View {
         HStack(spacing: 16) {
@@ -519,7 +604,8 @@ struct MediumWidgetView: View, WidgetTimeFormatting {
                     Text(LocalizedStrings.appNotRunning(entry.language))
                         .font(.system(size: 11))
                         .foregroundColor(.white.opacity(0.65))
-                        .lineLimit(1)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.85)
                 }
 
                 Button(intent: LaunchAppIntent()) {
@@ -560,6 +646,8 @@ struct MediumWidgetView: View, WidgetTimeFormatting {
                     Text(LocalizedStrings.pleaseSignIn(entry.language))
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.red)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.85)
                     Spacer()
                 }
                 Spacer()
@@ -571,12 +659,14 @@ struct MediumWidgetView: View, WidgetTimeFormatting {
                         Text(LocalizedStrings.selectPlaylist(entry.language))
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(.white)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.85)
                         Spacer(minLength: 0)
                         Image(systemName: "music.note.list")
                             .foregroundColor(.yellow)
                     }
 
-                    if entry.playlists.isEmpty {
+                    if validPlaylists.isEmpty {
                         Spacer()
                         Text(LocalizedStrings.loadingPlaylists(entry.language))
                             .font(.system(size: 11))
@@ -584,7 +674,7 @@ struct MediumWidgetView: View, WidgetTimeFormatting {
                         Spacer()
                     } else {
                         VStack(spacing: 3) {
-                            ForEach(entry.playlists.prefix(4), id: \.id) { playlist in
+                            ForEach(validPlaylists.prefix(4), id: \.id) { playlist in
                                 Button(intent: SelectPlaylistIntent(playlistID: playlist.id)) {
                                     HStack(spacing: 6) {
                                         Image(systemName: "play.circle.fill")
@@ -617,7 +707,7 @@ struct MediumWidgetView: View, WidgetTimeFormatting {
                                     .font(.system(size: 10, weight: .bold))
                                     .foregroundColor(.red)
                             }
-                            Text(entry.title)
+                            Text(displayTitle)
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundColor(.white)
                                 .lineLimit(1)
@@ -647,34 +737,11 @@ struct MediumWidgetView: View, WidgetTimeFormatting {
                 Spacer(minLength: 0)
 
                 VStack(spacing: 2) {
-                    if entry.isPlaying, entry.duration > 0, let range = timerRange {
-                        ProgressView(timerInterval: range, countsDown: false) {
-                            EmptyView()
-                        } currentValueLabel: {
-                            EmptyView()
-                        }
-                        .tint(.red)
-                    } else {
-                        ProgressView(
-                            value: max(0, min(entry.currentTime, entry.duration)),
-                            total: max(entry.duration, 1)
-                        )
-                        .tint(entry.isPlaying ? .red : .gray)
-                    }
+                    progressBarView()
 
-                    HStack {
-                        if entry.isPlaying {
-                            Text(trackStartDate, style: .timer)
-                        } else {
-                            Text(formatTime(entry.currentTime))
-                        }
-
-                        Spacer()
-
-                        Text(formatTime(entry.duration))
-                    }
-                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.9))
+                    timeLabelsView()
+                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.9))
                 }
 
                 HStack(spacing: 20) {
@@ -717,9 +784,9 @@ struct MediumWidgetView: View, WidgetTimeFormatting {
                     .buttonStyle(.plain)
 
                     Button(intent: ToggleRepeatIntent()) {
-                        Image(systemName: entry.repeatMode == 2 ? "repeat.1" : "repeat")
+                        Image(systemName: normalizedRepeatMode == 2 ? "repeat.1" : "repeat")
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(entry.repeatMode > 0 ? .blue : .white.opacity(0.5))
+                            .foregroundColor(normalizedRepeatMode > 0 ? .blue : .white.opacity(0.5))
                             .frame(width: 32, height: 32)
                             .contentShape(Rectangle())
                     }
@@ -732,21 +799,7 @@ struct MediumWidgetView: View, WidgetTimeFormatting {
         }
         .padding(12)
         .containerBackground(for: .widget) {
-            ZStack {
-                if entry.isAppRunning && entry.hasSelectedPlaylist, let nsImage = entry.artworkImage {
-                    Image(nsImage: nsImage)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    Color.black
-                }
-
-                LinearGradient(
-                    colors: [.black.opacity(0.4), .black.opacity(0.88)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            }
+            widgetBackgroundView(topOpacity: 0.4)
         }
     }
 }

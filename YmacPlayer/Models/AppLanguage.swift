@@ -320,4 +320,293 @@ public struct LocalizedStrings {
         case .polish: return "Odtwarzacz jest wyłączony"
         }
     }
+
+    public static func backButton(_ lang: AppLanguage) -> String {
+        switch lang {
+        case .english: return "Back"
+        case .german: return "Zurück"
+        case .russian: return "Назад"
+        case .ukrainian: return "Назад"
+        case .spanish: return "Atrás"
+        case .portuguese: return "Voltar"
+        case .italian: return "Indietro"
+        case .french: return "Retour"
+        case .romanian: return "Înapoi"
+        case .polish: return "Wstecz"
+        }
+    }
+
+    public static func loginButton(_ lang: AppLanguage) -> String {
+        switch lang {
+        case .english: return "Login"
+        case .german: return "Anmelden"
+        case .russian: return "Войти"
+        case .ukrainian: return "Увійти"
+        case .spanish: return "Iniciar sesión"
+        case .portuguese: return "Entrar"
+        case .italian: return "Accedi"
+        case .french: return "Connexion"
+        case .romanian: return "Conectare"
+        case .polish: return "Zaloguj"
+        }
+    }
+
+    public static func shuffleHelp(_ lang: AppLanguage) -> String {
+        switch lang {
+        case .english: return "Shuffle"
+        case .german: return "Zufallswiedergabe"
+        case .russian: return "Перемешать"
+        case .ukrainian: return "Перемішати"
+        case .spanish: return "Aleatorio"
+        case .portuguese: return "Aleatório"
+        case .italian: return "Riproduzione casuale"
+        case .french: return "Lecture aléatoire"
+        case .romanian: return "Redare aleatorie"
+        case .polish: return "Losowo"
+        }
+    }
+
+    public static func repeatHelp(_ lang: AppLanguage, mode: Int) -> String {
+        switch mode {
+        case 2:
+            switch lang {
+            case .english: return "Repeat one"
+            case .german: return "Titel wiederholen"
+            case .russian: return "Повтор одного трека"
+            case .ukrainian: return "Повтор одного треку"
+            case .spanish: return "Repetir una"
+            case .portuguese: return "Repetir uma"
+            case .italian: return "Ripeti uno"
+            case .french: return "Répéter un titre"
+            case .romanian: return "Repetă o piesă"
+            case .polish: return "Powtarzaj jeden"
+            }
+        case 1:
+            switch lang {
+            case .english: return "Repeat all"
+            case .german: return "Alle wiederholen"
+            case .russian: return "Повтор всех"
+            case .ukrainian: return "Повтор усіх"
+            case .spanish: return "Repetir todo"
+            case .portuguese: return "Repetir tudo"
+            case .italian: return "Ripeti tutto"
+            case .french: return "Tout répéter"
+            case .romanian: return "Repetă tot"
+            case .polish: return "Powtarzaj wszystko"
+            }
+        default:
+            switch lang {
+            case .english: return "Repeat off"
+            case .german: return "Wiederholung aus"
+            case .russian: return "Повтор выключен"
+            case .ukrainian: return "Повтор вимкнено"
+            case .spanish: return "Repetir desactivado"
+            case .portuguese: return "Repetição desativada"
+            case .italian: return "Ripetizione disattivata"
+            case .french: return "Répétition désactivée"
+            case .romanian: return "Repetare oprită"
+            case .polish: return "Powtarzanie wyłączone"
+            }
+        }
+    }
+
+    public static func likeHelp(_ lang: AppLanguage) -> String {
+        switch lang {
+        case .english: return "Like"
+        case .german: return "Gefällt mir"
+        case .russian: return "Нравится"
+        case .ukrainian: return "Подобається"
+        case .spanish: return "Me gusta"
+        case .portuguese: return "Gostei"
+        case .italian: return "Mi piace"
+        case .french: return "J'aime"
+        case .romanian: return "Îmi place"
+        case .polish: return "Lubię to"
+        }
+    }
+
+    public static func dislikeHelp(_ lang: AppLanguage) -> String {
+        switch lang {
+        case .english: return "Dislike"
+        case .german: return "Gefällt mir nicht"
+        case .russian: return "Не нравится"
+        case .ukrainian: return "Не подобається"
+        case .spanish: return "No me gusta"
+        case .portuguese: return "Não gostei"
+        case .italian: return "Non mi piace"
+        case .french: return "Je n'aime pas"
+        case .romanian: return "Nu îmi place"
+        case .polish: return "Nie lubię"
+        }
+    }
+
+    public static func queueHelp(_ lang: AppLanguage) -> String {
+        switch lang {
+        case .english: return "Up Next Queue"
+        case .german: return "Warteschlange"
+        case .russian: return "Очередь воспроизведения"
+        case .ukrainian: return "Черга відтворення"
+        case .spanish: return "Cola de reproducción"
+        case .portuguese: return "Fila de reprodução"
+        case .italian: return "Coda di riproduzione"
+        case .french: return "File d'attente"
+        case .romanian: return "Coadă de redare"
+        case .polish: return "Kolejka odtwarzania"
+        }
+    }
+
+    public static func aboutDescription(_ lang: AppLanguage) -> String {
+        switch lang {
+        case .english:
+            return """
+            Version 1.0.0
+
+            A lightweight, background-native macOS status bar player and desktop widget for YouTube Music.
+
+            Key Features:
+            • Menu Bar Popover: Full player controls, track seeker, and queue viewer.
+            • Interactive Desktop Widgets: Control playback and switch playlists directly from macOS Widgets via AppIntents.
+            • System Media Integration: Full support for Control Center, Now Playing metadata, and media keys.
+            • Multi-Language Support: Available in 10 languages with real-time UI language switching.
+            • Background Web Engine: Runs in a dedicated background container to ensure uninterrupted audio playback.
+
+            Built with SwiftUI, WebKit, WidgetKit, and AppIntents.
+            """
+        case .german:
+            return """
+            Version 1.0.0
+
+            Ein schlanker, nativer macOS-Menüleisten-Player und Desktop-Widget für YouTube Music.
+
+            Hauptfunktionen:
+            • Menüleisten-Popover: Vollständige Wiedergabesteuerung, Titelfortschritt und Warteschlangenansicht.
+            • Interaktive Desktop-Widgets: Wiedergabe steuern und Playlists direkt über macOS-Widgets mit AppIntents wechseln.
+            • System-Medienintegration: Volle Unterstützung für Kontrollzentrum, „Aktuelle Wiedergabe“-Metadaten und Medientasten.
+            • Mehrsprachige Oberfläche: Verfügbar in 10 Sprachen mit sofortigem Sprachwechsel.
+            • Web-Engine im Hintergrund: Läuft in einem eigenen Hintergrund-Container für unterbrechungsfreie Audiowiedergabe.
+
+            Entwickelt mit SwiftUI, WebKit, WidgetKit und AppIntents.
+            """
+        case .russian:
+            return """
+            Версия 1.0.0
+
+            Лёгкий нативный плеер для строки меню macOS и интерактивный виджет рабочего стола для YouTube Music.
+
+            Основные возможности:
+            • Меню в строке состояния: полное управление воспроизведением, перемотка и просмотр очереди.
+            • Интерактивные виджеты: управление воспроизведением и переключение плейлистов прямо из виджетов macOS через AppIntents.
+            • Интеграция с системой: полная поддержка Пункта управления, метаданных «Сейчас исполняется» и медиа-клавиш.
+            • Поддержка 10 языков: мгновенное переключение языка интерфейса в реальном времени.
+            • Фоновый веб-движок: работает в отдельном фоновом контейнере для непрерывного воспроизведения звука.
+
+            Создано с помощью SwiftUI, WebKit, WidgetKit и AppIntents.
+            """
+        case .ukrainian:
+            return """
+            Версія 1.0.0
+
+            Легкий нативний плеєр для панелі меню macOS та інтерактивний віджет робочого столу для YouTube Music.
+
+            Основні можливості:
+            • Поповер у панелі меню: повне керування відтворенням, перемотування треку та перегляд черги.
+            • Інтерактивні віджети: керуйте відтворенням і перемикайте плейлисти безпосередньо з віджетів macOS через AppIntents.
+            • Системна інтеграція медіа: повна підтримка Центру керування, метаданих «Зараз грає» та медіаклавіш.
+            • Багатомовність: підтримка 10 мов із миттєвим перемиканням інтерфейсу.
+            • Фоновий вебрушій: працює в окремому фоновому контейнері для безперервного відтворення аудіо.
+
+            Створено за допомогою SwiftUI, WebKit, WidgetKit та AppIntents.
+            """
+        case .spanish:
+            return """
+            Versión 1.0.0
+
+            Un reproductor ligero y nativo para la barra de menú de macOS y widget de escritorio para YouTube Music.
+
+            Funciones principales:
+            • Ventana en la barra de menú: controles completos de reproducción, barra de progreso y cola de reproducción.
+            • Widgets interactivos: controla la reproducción y cambia de lista directamente desde los widgets de macOS con AppIntents.
+            • Integración multimedia del sistema: compatibilidad total con el Centro de control, metadatos de En reproducción y teclas multimedia.
+            • Soporte multilingüe: disponible en 10 idiomas con cambio instantáneo de interfaz.
+            • Motor web en segundo plano: se ejecuta en un contenedor dedicado para garantizar una reproducción de audio continua.
+
+            Desarrollado con SwiftUI, WebKit, WidgetKit y AppIntents.
+            """
+        case .portuguese:
+            return """
+            Versão 1.0.0
+
+            Um reprodutor leve e nativo na barra de menus do macOS com widget de área de trabalho para o YouTube Music.
+
+            Principais recursos:
+            • Popover na barra de menus: controles completos de reprodução, barra de progresso e visualização da fila.
+            • Widgets interativos: controle a reprodução e alterne playlists diretamente pelos widgets do macOS via AppIntents.
+            • Integração de mídia do sistema: suporte completo à Central de Controle, metadados de Reproduzindo Agora e teclas de mídia.
+            • Suporte multilíngue: disponível em 10 idiomas com troca instantânea na interface.
+            • Motor web em segundo plano: executa em um contêiner dedicado para garantir reprodução contínua de áudio.
+
+            Desenvolvido com SwiftUI, WebKit, WidgetKit e AppIntents.
+            """
+        case .italian:
+            return """
+            Versione 1.0.0
+
+            Un lettore leggero e nativo per la barra dei menu di macOS con widget desktop per YouTube Music.
+
+            Funzionalità principali:
+            • Popover nella barra dei menu: controlli completi di riproduzione, barra di avanzamento e visualizzazione della coda.
+            • Widget interattivi: controlla la riproduzione e cambia playlist direttamente dai widget di macOS tramite AppIntents.
+            • Integrazione multimediale di sistema: supporto completo per Centro di controllo, metadati In riproduzione e tasti multimediali.
+            • Supporto multilingue: disponibile in 10 lingue con cambio immediato dell'interfaccia.
+            • Motore web in background: funziona in un contenitore dedicato per garantire una riproduzione audio ininterrotta.
+
+            Sviluppato con SwiftUI, WebKit, WidgetKit e AppIntents.
+            """
+        case .french:
+            return """
+            Version 1.0.0
+
+            Un lecteur léger et natif pour la barre des menus macOS avec widget de bureau pour YouTube Music.
+
+            Fonctionnalités principales :
+            • Fenêtre dans la barre des menus : contrôles complets de lecture, barre de progression et file d'attente.
+            • Widgets interactifs : contrôlez la lecture et changez de playlist directement depuis les widgets macOS via AppIntents.
+            • Intégration multimédia système : prise en charge complète du Centre de contrôle, des métadonnées À l'écoute et des touches multimédias.
+            • Support multilingue : disponible en 10 langues avec changement instantané de l'interface.
+            • Moteur web en arrière-plan : s'exécute dans un conteneur dédié pour assurer une lecture audio ininterrompue.
+
+            Conçu avec SwiftUI, WebKit, WidgetKit et AppIntents.
+            """
+        case .romanian:
+            return """
+            Versiunea 1.0.0
+
+            Un player ușor și nativ pentru bara de meniu macOS cu widget de desktop pentru YouTube Music.
+
+            Funcții principale:
+            • Fereastră în bara de meniu: controale complete de redare, bară de progres și vizualizare a cozii.
+            • Widgeturi interactive: controlează redarea și schimbă playlisturile direct din widgeturile macOS prin AppIntents.
+            • Integrare media de sistem: suport complet pentru Centrul de control, metadatele Acum se redă și tastele media.
+            • Suport multilingv: disponibil în 10 limbi cu schimbare instantanee a interfeței.
+            • Motor web în fundal: rulează într-un container dedicat pentru o redare audio neîntreruptă.
+
+            Construit cu SwiftUI, WebKit, WidgetKit și AppIntents.
+            """
+        case .polish:
+            return """
+            Wersja 1.0.0
+
+            Lekki, natywny odtwarzacz na pasek menu macOS oraz widżet biurkowy dla YouTube Music.
+
+            Główne funkcje:
+            • Okno na pasku menu: pełne sterowanie odtwarzaniem, pasek postępu i podgląd kolejki.
+            • Interaktywne widżety: steruj odtwarzaniem i przełączaj playlisty bezpośrednio z widżetów macOS przez AppIntents.
+            • Integracja systemowa: pełna obsługa Centrum sterowania, metadanych Odtwarzane oraz klawiszy multimedialnych.
+            • Wersje językowe: obsługa 10 języków ze zmianą interfejsu w czasie rzeczywistym.
+            • Silnik sieciowy w tle: działa w dedykowanym kontenerze w tle, zapewniając płynne odtwarzanie dźwięku.
+
+            Stworzono przy użyciu SwiftUI, WebKit, WidgetKit i AppIntents.
+            """
+        }
+    }
 }

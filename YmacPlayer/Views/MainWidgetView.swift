@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct MainWidgetView: View {
 
@@ -27,13 +28,29 @@ struct MainWidgetView: View {
 
             if showFullBrowser {
                 HiddenWebView()
-                    .frame(height: 380)
+                    .frame(minWidth: 276, minHeight: 380, maxHeight: 380)
                     .cornerRadius(8)
             } else {
                 compactPlayer
             }
         }
         .padding(12)
+        .onChange(of: controller.hasActiveTrack) { _, hasActive in
+            if !hasActive {
+                showQueuePopover = false
+                controller.isEditingSlider = false
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSPopover.didCloseNotification)) { _ in
+            if showFullBrowser {
+                showFullBrowser = false
+                let webView = YTMController.shared.webView
+                webView.window?.makeFirstResponder(nil)
+                webView.translatesAutoresizingMaskIntoConstraints = true
+                webView.autoresizingMask = [.width, .height]
+                YTMController.shared.attachToBackgroundWindow()
+            }
+        }
     }
 
     // MARK: - Header View
@@ -47,7 +64,7 @@ struct MainWidgetView: View {
                     HStack(spacing: 5) {
                         Image(systemName: "chevron.left")
                             .font(.system(size: 11, weight: .bold))
-                        Text("Back")
+                        Text(LocalizedStrings.backButton(controller.currentLanguage))
                             .font(.system(size: 12, weight: .bold))
                     }
                     .foregroundColor(.white)
@@ -58,6 +75,7 @@ struct MainWidgetView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .help(LocalizedStrings.toggleViewHelp(controller.currentLanguage, showFull: showFullBrowser))
 
                 Spacer()
 
@@ -79,7 +97,7 @@ struct MainWidgetView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "person.crop.circle.badge.plus")
-                        Text("Login")
+                        Text(LocalizedStrings.loginButton(controller.currentLanguage))
                     }
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.white)
@@ -90,6 +108,7 @@ struct MainWidgetView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .help(LocalizedStrings.toggleViewHelp(controller.currentLanguage, showFull: false))
 
             } else {
                 Text("Ymac Player")
@@ -137,6 +156,7 @@ struct MainWidgetView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .help(LocalizedStrings.toggleViewHelp(controller.currentLanguage, showFull: showFullBrowser))
             }
         }
     }
@@ -154,11 +174,8 @@ struct MainWidgetView: View {
     private var artworkPlayer: some View {
         ZStack(alignment: .bottom) {
             artwork
-
-            if controller.hasActiveTrack {
-                artworkGradient
-                playerOverlay
-            }
+            artworkGradient
+            playerOverlay
         }
         .frame(width: 260, height: 260)
         .cornerRadius(14)
@@ -176,17 +193,26 @@ struct MainWidgetView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                 } else {
-                    Color.gray.opacity(0.2)
+                    Color.black.opacity(0.65)
                 }
             }
+            .frame(width: 260, height: 260)
+            .clipped()
         } else {
             VStack(spacing: 10) {
                 Image(systemName: "music.note.house")
                     .font(.system(size: 48))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.white.opacity(0.65))
+                    .padding(.bottom, 96)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.gray.opacity(0.12))
+            .background(
+                LinearGradient(
+                    colors: [Color.black.opacity(0.45), Color.black.opacity(0.82)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
         }
     }
 
@@ -214,6 +240,7 @@ struct MainWidgetView: View {
         }
         .padding(.horizontal, 12)
         .padding(.bottom, 10)
+        .frame(width: 260)
     }
 
     @ViewBuilder
@@ -235,9 +262,16 @@ struct MainWidgetView: View {
                         .lineLimit(1)
                 }
             } else {
-                Text(LocalizedStrings.loadingPlaylists(controller.currentLanguage))
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(.white.opacity(0.8))
+                Text(
+                    controller.userPlaylists.isEmpty
+                        ? LocalizedStrings.loadingPlaylists(controller.currentLanguage)
+                        : LocalizedStrings.selectPlaylistPrompt(controller.currentLanguage)
+                )
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(.white.opacity(0.85))
+                .shadow(color: .black.opacity(0.9), radius: 2)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
             }
         }
     }
@@ -247,10 +281,17 @@ struct MainWidgetView: View {
             Slider(
                 value: Binding(
                     get: { safeCurrentTime },
-                    set: { controller.currentTime = $0 }
+                    set: { newValue in
+                        guard controller.hasActiveTrack else { return }
+                        controller.currentTime = newValue
+                    }
                 ),
                 in: 0...safeDuration,
                 onEditingChanged: { editing in
+                    guard controller.hasActiveTrack else {
+                        controller.isEditingSlider = false
+                        return
+                    }
                     controller.isEditingSlider = editing
                     if !editing {
                         controller.seekTo(controller.currentTime)
@@ -258,6 +299,7 @@ struct MainWidgetView: View {
                 }
             )
             .tint(.red)
+            .disabled(!controller.hasActiveTrack)
 
             HStack {
                 Text(formatTime(controller.currentTime))
@@ -282,6 +324,8 @@ struct MainWidgetView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .disabled(!controller.hasActiveTrack)
+                .opacity(controller.hasActiveTrack ? 1.0 : 0.45)
 
                 Button {
                     controller.togglePlay()
@@ -293,6 +337,8 @@ struct MainWidgetView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .disabled(!controller.hasActiveTrack && controller.userPlaylists.isEmpty)
+                .opacity((controller.hasActiveTrack || !controller.userPlaylists.isEmpty) ? 1.0 : 0.45)
 
                 Button {
                     controller.nextTrack()
@@ -304,6 +350,8 @@ struct MainWidgetView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .disabled(!controller.hasActiveTrack)
+                .opacity(controller.hasActiveTrack ? 1.0 : 0.45)
             }
 
             HStack {
@@ -319,6 +367,9 @@ struct MainWidgetView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .disabled(!controller.hasActiveTrack)
+                .opacity(controller.hasActiveTrack ? 1.0 : 0.45)
+                .help(LocalizedStrings.queueHelp(controller.currentLanguage))
                 .popover(isPresented: $showQueuePopover, arrowEdge: .top) {
                     QueuePopoverView(isPresented: $showQueuePopover)
                         .environmentObject(controller)
@@ -341,6 +392,7 @@ struct MainWidgetView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .help(LocalizedStrings.likeHelp(controller.currentLanguage))
 
             Spacer()
 
@@ -356,6 +408,7 @@ struct MainWidgetView: View {
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
+            .help(LocalizedStrings.shuffleHelp(controller.currentLanguage))
 
             Spacer()
 
@@ -371,6 +424,7 @@ struct MainWidgetView: View {
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
+            .help(LocalizedStrings.repeatHelp(controller.currentLanguage, mode: controller.repeatMode))
 
             Spacer()
 
@@ -384,6 +438,7 @@ struct MainWidgetView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .help(LocalizedStrings.dislikeHelp(controller.currentLanguage))
 
             Spacer()
         }

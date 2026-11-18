@@ -1,17 +1,17 @@
-# Ymac Player v1.0.0 — Release Notes
+# Ymac Player v1.1.0 — Release Notes
 
-We are thrilled to announce the initial official release of **Ymac Player (v1.0.0)** — a sleek, native macOS companion for YouTube Music built with SwiftUI, AppIntents, and WidgetKit.
+**Ymac Player v1.1.0** delivers full compatibility with YouTube Music's updated player DOM, reliable desktop WidgetKit integration without 7-day profile expiration, queue deduplication, and rock-solid playlist persistence.
 
 ---
 
-## 🌟 Highlights
+## 🌟 What's New in v1.1.0
 
-- **🎧 Menu Bar Music Popover:** Access YouTube Music instantly from the macOS status bar. View high-resolution album artwork, track title, artist, seekable progress slider, and one-click playback controls.
-- **📱 macOS 26+ Desktop Widgets:** Control playback and switch between your favorite playlists directly from your desktop with interactive widgets (`systemSmall` and `systemMedium`). Zero application window pops up!
-- **🌐 10 Built-in Languages:** Fully localized interface supporting English, Русский, Español, Deutsch, Français, Italiano, Português, Türkçe, Українська, and 日本語.
-- **⚡️ Native Media Keys & Control Center:** Seamlessly integrated with `MPNowPlayingInfoCenter` and `MPRemoteCommandCenter`. Control playback with your Mac's physical media keys, Touch Bar, and Lock Screen.
-- **🔒 WebKit Sandboxed Core:** Pure native Swift & SwiftUI application with a sandboxed WebKit engine. Zero Electron overhead, minimal RAM footprint, and complete privacy isolation.
-- **🚀 Autostart at Login:** Optionally launch silently at login via macOS `SMAppService`.
+- **🎛 Full YouTube Music Wiz & ShadyDOM Support:** Supports both classic `<ytmusic-player-bar>` (including ShadyDOM) and the newer `<ytmusic-miniplayer>` / `<ytmusic-wiz-player-controls>` player UI so **Play/Pause, Next, Previous, Like, Dislike, Shuffle, and Repeat (Off / All / One)** click and sync accurately in real signed-in sessions.
+- **📋 Deduplicated Track Queue:** Filters hidden `#counterpart-renderer[hidden]` AV duplicates inside `<ytmusic-playlist-panel-video-wrapper-renderer>` so tracks and official video counterparts never appear twice in *Up Next*.
+- **🔖 Persistent Playlist Selection & Full Library Support:** Resolves active playlists across URLs, `#movie_player.getPlaylistId()`, and queue headers, normalizes `VL` browse prefixes, preserves the full `/library/playlists` list while playing tracks, and keeps your chosen playlist selected across SPA home navigation.
+- **🧩 Reliable Desktop Widgets & Non-Expiring Signing:** Configured App Group IPC (`9R2Z2PT297.group.com.ymacplayer`), real-time countdown & artwork sync, interactive `AppIntents`, and CommandLineTools fallback signing without 7-day `embedded.provisionprofile` expiration.
+- **🖼 Crisp 16:9 Artwork Cropping & Embedded Browser Fix:** Fixes wide video thumbnails overflowing the compact popover overlay and allows trusted clicks inside the embedded browser (`🌐`) to start playback naturally.
+- **🧪 Automated Test Suite (`Tests/run_tests.sh`):** Added 1,000+ unit & `WKWebView` integration assertions covering models, 10 localizations, widget intents, and both YouTube Music DOM architectures.
 
 ---
 
@@ -19,22 +19,22 @@ We are thrilled to announce the initial official release of **Ymac Player (v1.0.
 
 | Asset | Format | Description |
 | :--- | :--- | :--- |
-| **`YmacPlayer-1.0.0.dmg`** | Apple Disk Image | Drag-and-drop installer for macOS 26+ |
-| **`YmacPlayer-1.0.0.zip`** | Compressed Archive | Portable standalone `.app` bundle |
+| **`YmacPlayer-1.1.0.dmg`** | Apple Disk Image | Drag-and-drop installer for macOS 14+ |
+| **`YmacPlayer-1.1.0.zip`** | Compressed Archive | Portable standalone `.app` bundle |
 | **`SHA256SUMS.txt`** | Text | Cryptographic checksums for verifying asset integrity |
 
 ---
 
 ## 💻 System Requirements
 
-- **Operating System:** macOS 26.0 or later.
-- **Architecture:** Apple Silicon (M1/M2/M3/M4) & Intel (Universal Binary compatible).
+- **Operating System:** macOS 14.0 or later.
+- **Architecture:** Apple Silicon (`arm64`) & Intel compatible.
 
 ---
 
 ## 🛠 Installation Instructions
 
-1. Download **`YmacPlayer-1.0.0.dmg`** (or `YmacPlayer-1.0.0.zip`) from Assets below.
+1. Download **`YmacPlayer-1.1.0.dmg`** (or `YmacPlayer-1.1.0.zip`) from Assets below.
 2. Double-click the `.dmg` file and drag **Ymac Player.app** into your **Applications** folder.
 3. Open Terminal and run this one-time command (to clear Apple Gatekeeper quarantine on open-source binaries):
    ```bash
@@ -58,7 +58,7 @@ We are thrilled to announce the initial official release of **Ymac Player (v1.0.
 
 - Initial public release of Ymac Player v1.0.0.
 - Implemented `YTMController` with JavaScript bridge for YouTube Music Web API.
-- Implemented App Group IPC (`group.com.ymacplayer`) and Darwin Notifications for instant synchronization between the main app and widget extension.
+- Implemented App Group IPC (`9R2Z2PT297.group.com.ymacplayer`) and Darwin Notifications for instant synchronization between the main app and widget extension.
 - Added AppIntents for widget playback commands: `TogglePlayIntent`, `NextTrackIntent`, `PreviousTrackIntent`, `ToggleShuffleIntent`, `ToggleRepeatIntent`, `SelectPlaylistIntent`, and `ResetPlaylistIntent`.
 - Added localized menus and status notifications across 10 languages.
 - Configured automated release packaging (`scripts/build_release.sh`).
